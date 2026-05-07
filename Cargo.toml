@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "crates/nova-core", "crates/nova-macros",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+
+[workspace.dependencies]
+# Define versions here once so all plugins stay in sync
+tokio = { version = "1.0", features = ["full"] }
+axum = "0.8"
+serde = { version = "1.0", features = ["derive"] }
