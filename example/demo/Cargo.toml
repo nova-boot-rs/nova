@@ -1,0 +1,9 @@
+[package]
+name = "demo"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+nova-core = { path = "../../crates/nova-core" }
