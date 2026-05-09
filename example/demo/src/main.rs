@@ -1,24 +1,14 @@
-use nova_core::{NovaApp, get, post, Json};
-use serde::Deserialize;
+use nova_core::{NovaApp};
+use nova_sql::*;
 
-#[get("/hello")]
-async fn hello_world() -> &'static str {
-    "Hello from Nova!"
-}
-
-#[derive(Deserialize)]
-struct Message {
-    content: String,
-}
-
-#[post("/echo")]
-async fn echo(Json(payload): Json<Message>) -> String {
-    format!("Nova received: {}", payload.content)
-}
+mod controller;
+mod entity;
 
 #[tokio::main]
 async fn main() {
     let port: u16 = 8080; // You can change this to any port you like
+    let sql_plugin = NovaSql::connect("sqlite:people.db?mode=rwc").await
+        .add_entity::<entity::user::Entity>();
     // No manual routing needed! run() finds hello_world automatically.
-    NovaApp::new(port).run().await;
+    NovaApp::new(port, ()).add_plugin(sql_plugin).run().await;
 }
