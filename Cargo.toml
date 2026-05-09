@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/nova-core", "crates/nova-macros", "test/demo",
+    "crates/nova-core", "crates/nova-macros", "crates/nova-sql", "example/demo",
 ]
 resolver = "2"
 
