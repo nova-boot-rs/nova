@@ -27,7 +27,7 @@ pub fn rest_controller(_args: TokenStream, input: TokenStream) -> TokenStream {
 // get macro: #[get("/path")]
 #[proc_macro_attribute]
 pub fn get(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value(); 
+    let path = parse_macro_input!(args as syn::LitStr).value();
     let input_fn = parse_macro_input!(input as syn::ItemFn);
     let fn_name = &input_fn.sig.ident;
 
@@ -134,4 +134,3 @@ pub fn patch(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     TokenStream::from(expanded)
 }
-

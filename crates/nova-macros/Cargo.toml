@@ -10,5 +10,3 @@ proc-macro = true # Crucial: This tells Rust this is a macro crate
 syn = { version = "2.0", features = ["full"] } # Parses Rust code into a tree
 quote = "1.0"                                  # Turns that tree back into code
 proc-macro2 = "1.0"
-# inventory = "0.3"
-# axum = "0.8"

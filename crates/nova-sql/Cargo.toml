@@ -1,0 +1,10 @@
+[package]
+name = "nova-sql"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+sea-orm = "1.1"
+sea-orm-migration = "1.1"
+sea-query = "0.32"
+nova-core = { path = "../nova-core" }

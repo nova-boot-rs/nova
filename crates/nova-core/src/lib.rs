@@ -1,22 +1,35 @@
+pub use axum;
+pub use axum::Json;
 use axum::routing::MethodRouter;
-use axum::{ Router, serve };
+use axum::{Router, serve};
+pub use inventory;
+pub use serde::{Deserialize, Serialize};
+use std::future::Future;
+use std::pin::Pin;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing_subscriber::fmt::init;
-pub use inventory;
-pub use axum;
-pub use axum::Json; 
-pub use serde::{Deserialize, Serialize};
+pub use async_trait::async_trait;
 
 extern crate nova_macros;
-pub use nova_macros::{rest_controller, get, post, put, delete, patch};
+pub use nova_macros::{delete, get, patch, post, put, rest_controller};
 
-pub struct NovaApp<S=()> where 
-    S: Clone + Send + Sync + 'static {
+#[async_trait]
+pub trait NovaPlugin: Send + Sync {
+    fn name(&self) -> &'static str;
+    async fn on_init(&self);
+    fn extend_router(&self, router: Router) -> Router;
+}
+
+pub struct NovaApp<S = ()>
+where
+    S: Clone + Send + Sync + 'static,
+{
     router: Router<S>,
     address: std::net::SocketAddr,
-    state: S, // For future state management
+    state: S,
+    plugins: Vec<Box<dyn NovaPlugin>>,
 }
 
 pub struct NovaRoute {
@@ -28,27 +41,36 @@ pub struct NovaRoute {
 // This allows the inventory crate to collect NovaRoute instances
 inventory::collect!(NovaRoute);
 
-impl <S> NovaApp<S> where
-    S: Clone + Send + Sync + 'static {
+impl<S> NovaApp<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     pub fn new(port: u16, state: S) -> Self {
         let router = Router::<S>::new().layer(TraceLayer::new_for_http()); // Auto-logging for every request!
 
         Self {
             router,
-            address: format!("0.0.0.0:{}", port).parse().expect("Invalid address"),
+            address: format!("0.0.0.0:{}", port)
+                .parse()
+                .expect("Invalid address"),
             state,
+            plugins: Vec::new(),
         }
     }
 
-    // A "Spring-like" method to add controllers
-    pub fn add_route(mut self, path: &str, method_router: MethodRouter<S>) -> Self {
-        self.router = self.router.route(path, method_router);
+    pub fn add_plugin<P: NovaPlugin + 'static>(mut self, plugin: P) -> Self {
+        self.plugins.push(Box::new(plugin));
         self
     }
 
     pub async fn run(self) {
         // Initialize logging automatically (The "Boot" way)
         init();
+
+        for plugin in &self.plugins {
+            info!("🔌 Loading plugin: {}", plugin.name());
+            plugin.on_init().await;
+        }
 
         let mut app_router = self.router.with_state(self.state.clone());
 
@@ -58,12 +80,18 @@ impl <S> NovaApp<S> where
             app_router = app_router.route(route.path, method_router);
         }
 
-        let final_router = app_router
-        .layer(axum::Extension(self.state.clone())); // Add logging to the final router
+        let mut final_router = app_router.layer(axum::Extension(self.state.clone())); 
+
+        for plugin in &self.plugins {
+            info!("🔌 Injecting state for: {}", plugin.name());
+            final_router = plugin.extend_router(final_router);
+        }
 
         info!("🚀 Nova-Boot starting on {}", self.address);
         let listener = TcpListener::bind(&self.address).await.unwrap();
 
-        serve(listener, final_router).await.expect("Server failed to start");
+        serve(listener, final_router)
+            .await
+            .expect("Server failed to start");
     }
 }
