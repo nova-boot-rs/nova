@@ -5,8 +5,6 @@ use axum::routing::MethodRouter;
 use axum::{Router, serve};
 pub use inventory;
 pub use serde::{Deserialize, Serialize};
-use std::future::Future;
-use std::pin::Pin;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;

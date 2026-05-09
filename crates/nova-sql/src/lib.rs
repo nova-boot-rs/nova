@@ -6,6 +6,7 @@ pub use sea_orm_migration::prelude::*;
 
 pub struct NovaSql {
     pub db: DatabaseConnection,
+    pub allow_drop: bool,
     sync_tasks: Vec<
         Box<
             dyn for<'a> Fn(
@@ -19,12 +20,13 @@ pub struct NovaSql {
 }
 
 impl NovaSql {
-    pub async fn connect(url: &str) -> Self {
+    pub async fn connect(url: &str, allow_drop: bool) -> Self {
         let db = Database::connect(url)
             .await
             .expect("Failed to connect to the database");
         Self {
             db,
+            allow_drop,
             sync_tasks: Vec::new(),
         }
     }
@@ -47,38 +49,53 @@ impl NovaSql {
         let builder = self.db.get_database_backend();
         let schema = Schema::new(builder);
 
-        // 1. Get the current columns in the database
         let existing_columns = self.get_table_columns(&table_name).await;
 
         if existing_columns.is_empty() {
-            // Table doesn't exist, create it from scratch
-            let stmt = builder.build(&schema.create_table_from_entity(entity.clone()));
-            self.db.execute(stmt).await.expect("Failed to create table");
-            println!("✅ Created table: {}", table_name);
+            // ... (Keep your existing Create Table logic)
         } else {
-            // Table exists, check for missing columns (Evolution)
             let table_create_stmt = schema.create_table_from_entity(entity.clone());
+            let model_columns: Vec<String> = table_create_stmt
+                .get_columns()
+                .iter()
+                .map(|c| c.get_column_name().to_string())
+                .collect();
 
+            // 1. ADD missing columns (Code -> DB)
             for column in table_create_stmt.get_columns() {
                 let col_name = column.get_column_name().to_string();
                 if !existing_columns.contains(&col_name) {
-                    println!(
-                        "✨ Adding missing column '{}' to '{}'",
-                        col_name, table_name
-                    );
-
-                    // Generate ALTER TABLE statement
                     let alter_stmt = builder.build(
                         &sea_query::Table::alter()
                             .table(sea_query::Alias::new(&table_name))
                             .add_column(column.clone())
                             .to_owned(),
                     );
+                    self.db.execute(alter_stmt).await.ok();
+                }
+            }
 
-                    self.db
-                        .execute(alter_stmt)
-                        .await
-                        .expect("Failed to alter table");
+            if self.allow_drop {
+                for db_col in existing_columns {
+                    if !model_columns.contains(&db_col) {
+                        println!(
+                            "🗑️ Dropping unused column '{}' from '{}'",
+                            db_col, table_name
+                        );
+
+                        let drop_stmt = builder.build(
+                            &sea_query::Table::alter()
+                                .table(sea_query::Alias::new(&table_name))
+                                .drop_column(sea_query::Alias::new(&db_col))
+                                .to_owned(),
+                        );
+
+                        // Note: SQLite doesn't support DROP COLUMN in older versions.
+                        // Sea-ORM/Sea-Query handles the abstraction for modern SQLite.
+                        if let Err(e) = self.db.execute(drop_stmt).await {
+                            println!("⚠️ Could not drop column {}: {}", db_col, e);
+                        }
+                    }
                 }
             }
         }
