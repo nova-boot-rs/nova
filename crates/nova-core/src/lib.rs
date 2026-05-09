@@ -1,3 +1,4 @@
+pub use async_trait::async_trait;
 pub use axum;
 pub use axum::Json;
 use axum::routing::MethodRouter;
@@ -10,7 +11,6 @@ use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing_subscriber::fmt::init;
-pub use async_trait::async_trait;
 
 extern crate nova_macros;
 pub use nova_macros::{delete, get, patch, post, put, rest_controller};
@@ -80,7 +80,7 @@ where
             app_router = app_router.route(route.path, method_router);
         }
 
-        let mut final_router = app_router.layer(axum::Extension(self.state.clone())); 
+        let mut final_router = app_router.layer(axum::Extension(self.state.clone()));
 
         for plugin in &self.plugins {
             info!("🔌 Injecting state for: {}", plugin.name());

@@ -1,14 +1,16 @@
-use nova_core::{Deserialize, Json, axum::Extension, axum::http::StatusCode, get, post, Serialize};
+use nova_core::{Deserialize, Json, Serialize, axum::Extension, axum::http::StatusCode, get, post};
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
 #[derive(Deserialize)]
-pub struct MessageReceived { // Added pub
+pub struct MessageReceived {
+    // Added pub
     pub message: String,
 }
 
 // And this
 #[derive(Serialize)]
-pub struct MessageSent { // Added pub
+pub struct MessageSent {
+    // Added pub
     pub reply: String,
 }
 
