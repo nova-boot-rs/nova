@@ -4,19 +4,19 @@ pub use sea_orm::{
 };
 pub use sea_orm_migration::prelude::*;
 
+/// Type alias for database sync task closures
+type SyncTask = Box<
+    dyn for<'a> Fn(
+            &'a NovaSql,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>
+        + Send
+        + Sync,
+>;
+
 pub struct NovaSql {
     pub db: DatabaseConnection,
     pub allow_drop: bool,
-    sync_tasks: Vec<
-        Box<
-            dyn for<'a> Fn(
-                    &'a NovaSql,
-                )
-                    -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>
-                + Send
-                + Sync,
-        >,
-    >,
+    sync_tasks: Vec<SyncTask>,
 }
 
 impl NovaSql {
@@ -54,7 +54,7 @@ impl NovaSql {
         if existing_columns.is_empty() {
             // ... (Keep your existing Create Table logic)
         } else {
-            let table_create_stmt = schema.create_table_from_entity(entity.clone());
+            let table_create_stmt = schema.create_table_from_entity(entity);
             let model_columns: Vec<String> = table_create_stmt
                 .get_columns()
                 .iter()
