@@ -1297,6 +1297,7 @@ dependencies = [
  "axum",
  "inventory",
  "nova-macros",
+ "sea-orm",
  "serde",
  "serde_json",
  "tokio",

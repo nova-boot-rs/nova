@@ -18,5 +18,12 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 async-trait = "0.1"
 
-# Internal Macros (We will link your macro crate here later)
+# Database support (optional)
+sea-orm = { version = "1.1", optional = true }
+
+# Internal Macros
 nova-macros = { path = "../nova-macros" }
+
+[features]
+default = []
+database = ["sea-orm"]

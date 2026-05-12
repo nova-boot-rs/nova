@@ -10,6 +10,13 @@ use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing_subscriber::fmt::init;
 
+// Error handling and response modules
+pub mod error;
+pub mod response;
+
+pub use error::{NovaError, NovaResult, ErrorResponse};
+pub use response::{ApiResponse, EmptyResponse, ListResponse};
+
 extern crate nova_macros;
 pub use nova_macros::{delete, get, patch, post, put, rest_controller};
 
