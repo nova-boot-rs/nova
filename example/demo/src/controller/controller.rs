@@ -72,17 +72,24 @@ pub async fn get_users(
         let username: String = row
             .try_get_by_index(1)
             .map_err(|e| NovaError::DatabaseError(format!("Failed to parse username: {}", e)))?;
-        let email: String = row.try_get_by_index(2).map_err(|e| {
-            NovaError::DatabaseError(format!("Failed to parse email: {}", e))
-        })?;
+        let email: String = row
+            .try_get_by_index(2)
+            .map_err(|e| NovaError::DatabaseError(format!("Failed to parse email: {}", e)))?;
 
-        users.push(UserResponse { id, username, email });
+        users.push(UserResponse {
+            id,
+            username,
+            email,
+        });
     }
 
     let total = users.len();
     let list_response = ListResponse::with_total(users, total);
 
-    Ok(Json(ApiResponse::with_status(StatusCode::OK, list_response)))
+    Ok(Json(ApiResponse::with_status(
+        StatusCode::OK,
+        list_response,
+    )))
 }
 
 /// Check database connection status
@@ -106,4 +113,3 @@ pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
         serde_json::json!({"status": "healthy"}),
     ))
 }
-

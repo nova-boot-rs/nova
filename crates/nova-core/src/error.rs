@@ -1,7 +1,7 @@
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -19,25 +19,25 @@ pub struct ErrorResponse {
 pub enum NovaError {
     /// Database connection or query errors
     DatabaseError(String),
-    
+
     /// Validation failed
     ValidationError(String),
-    
+
     /// Authentication failed
     AuthenticationError(String),
-    
+
     /// Authorization failed (forbidden)
     AuthorizationError(String),
-    
+
     /// Resource not found
     NotFound(String),
-    
+
     /// Conflict error (e.g., duplicate entry)
     Conflict(String),
-    
+
     /// Internal server error
     InternalError(String),
-    
+
     /// Bad request / Invalid input
     BadRequest(String),
     
