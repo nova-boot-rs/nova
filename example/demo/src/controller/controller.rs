@@ -1,6 +1,6 @@
 use nova_core::{
-    ApiResponse, Deserialize, Json, NovaError, NovaResult, Serialize, axum::Extension,
-    axum::http::StatusCode, get, post, ListResponse,
+    ApiResponse, Deserialize, Json, ListResponse, NovaError, NovaResult, Serialize,
+    axum::Extension, axum::http::StatusCode, get, post,
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
@@ -44,9 +44,12 @@ pub async fn echo(
         });
     }
 
-    Ok(Json(ApiResponse::with_status(StatusCode::OK, MessageSent {
-        reply: format!("Nova received: {}", payload.content),
-    })))
+    Ok(Json(ApiResponse::with_status(
+        StatusCode::OK,
+        MessageSent {
+            reply: format!("Nova received: {}", payload.content),
+        },
+    )))
 }
 
 /// Get all users with error handling and structured response

@@ -14,7 +14,7 @@ use tracing_subscriber::fmt::init;
 pub mod error;
 pub mod response;
 
-pub use error::{NovaError, NovaResult, ErrorResponse};
+pub use error::{ErrorResponse, NovaError, NovaResult};
 pub use response::{ApiResponse, EmptyResponse, ListResponse};
 
 extern crate nova_macros;

@@ -40,7 +40,7 @@ pub enum NovaError {
 
     /// Bad request / Invalid input
     BadRequest(String),
-    
+
     /// Custom error with status code
     Custom {
         status: StatusCode,
