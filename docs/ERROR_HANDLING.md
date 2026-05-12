@@ -1,6 +1,6 @@
 # Error Handling in Nova
 
-Nova provides a comprehensive error handling system that ensures consistent, structured error responses across your API.
+Nova provides a structured error handling system that keeps JSON responses predictable while still returning the correct HTTP status code.
 
 ## Core Concepts
 
@@ -32,7 +32,7 @@ pub type NovaResult<T> = Result<T, NovaError>;
 
 ### ApiResponse
 
-Wraps successful responses in a consistent format:
+Wraps successful responses in a consistent format. The HTTP status is stored internally and used when the response is converted into Axum output.
 
 ```rust
 pub struct ApiResponse<T: Serialize> {
@@ -41,6 +41,8 @@ pub struct ApiResponse<T: Serialize> {
     pub message: Option<String>,
 }
 ```
+
+Use `ApiResponse::with_status` when a success response should return something other than `200 OK`.
 
 ## Usage Examples
 
@@ -60,20 +62,20 @@ pub async fn create_user(
 
     // Create user...
     let user = User::new(payload);
-    Ok(Json(ApiResponse::ok(user)))
+    Ok(Json(ApiResponse::with_status(StatusCode::CREATED, user)))
 }
 ```
 
-Response on success (200 OK):
+Response on success (201 Created):
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "email": "user@example.com",
-    "name": "John Doe"
-  },
-  "message": null
+    "success": true,
+    "data": {
+        "id": 1,
+        "email": "user@example.com",
+        "name": "John Doe"
+    },
+    "message": null
 }
 ```
 
@@ -162,11 +164,8 @@ pub async fn list_posts(
 ) -> NovaResult<Json<ApiResponse<ListResponse<Post>>>> {
     let posts = Post::find().all(&db).await?;
     let list = ListResponse::with_total(posts.clone(), posts.len());
-    
-    Ok(Json(ApiResponse::ok_with_message(
-        list,
-        format!("Retrieved {} posts", posts.len()),
-    )))
+
+    Ok(Json(ApiResponse::with_status(StatusCode::OK, list)))
 }
 ```
 
@@ -180,9 +179,9 @@ Response (200 OK):
       {"id": 2, "title": "World", "content": "..."}
     ],
     "count": 2,
-    "total": 2
-  },
-  "message": "Retrieved 2 posts"
+        "total": 2
+    },
+    "message": null
 }
 ```
 
@@ -198,6 +197,7 @@ Response (200 OK):
 | `Conflict` | 409 Conflict |
 | `DatabaseError` | 500 Internal Server Error |
 | `InternalError` | 500 Internal Server Error |
+| `Custom { status, ... }` | user-defined |
 
 ## Automatic Conversions
 
@@ -210,7 +210,7 @@ let user = User::find_by_id(1)
     .await?; // Automatically converts sea_orm::DbErr to NovaError::DatabaseError
 
 // From serde_json errors
-let value = serde_json::from_str(json_str)?; // Automatically converts to ValidationError
+let value = serde_json::from_str(json_str)?; // Automatically converts to BadRequest
 ```
 
 ## Custom Errors
@@ -243,6 +243,7 @@ pub async fn process(
 5. **Validate early** - Check input validity before processing
 6. **Use ApiResponse consistently** - Wrap all successful responses
 7. **Handle database errors** - Always use `?` operator or `.map_err()` for DB operations
+8. **Choose the status explicitly when needed** - Use `ApiResponse::with_status` for `201`, `202`, or other success codes
 
 ## Migration from Raw Responses
 
