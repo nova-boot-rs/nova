@@ -8,7 +8,7 @@ edition.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tower.workspace = true
-tower-http.workspace = true
+tower-http = { workspace = true, features = ["request-id"] }
 inventory.workspace = true
 
 # Serialization & Utilities
@@ -19,7 +19,7 @@ tracing-subscriber.workspace = true
 async-trait.workspace = true
 
 # Database support (optional)
-sea-orm = { version = "1.1", optional = true }
+sea-orm = { workspace = true, optional = true }
 
 # Internal Macros
 nova-macros = { path = "../nova-macros" }

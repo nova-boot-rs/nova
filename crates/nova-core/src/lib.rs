@@ -6,6 +6,7 @@ pub use serde::{Deserialize, Serialize};
 
 pub mod runtime;
 pub mod config;
+pub mod observability;
 pub mod traits;
 
 // Error handling and response modules
@@ -14,6 +15,7 @@ pub mod response;
 
 pub use error::{ErrorResponse, NovaError, NovaResult};
 pub use config::{EnvConfigSource, JsonFileConfigSource, NovaConfig, NovaConfigBuilder, NovaConfigSource, NovaSecretSource};
+pub use observability::{init_tracing, NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId};
 pub use response::{ApiResponse, EmptyResponse, ListResponse};
 pub use runtime::{NovaApp, NovaRoute};
 pub use traits::{NovaLifecycle, NovaModule, NovaPlugin, NovaRouterExtender};

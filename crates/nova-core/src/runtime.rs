@@ -1,10 +1,10 @@
+use crate::observability::{init_tracing, request_id_layer};
 use crate::traits::NovaPlugin;
 use axum::routing::MethodRouter;
 use axum::{Router, serve};
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;
-use tracing_subscriber::fmt::init;
 
 pub struct NovaApp<S = ()>
 where
@@ -31,7 +31,9 @@ where
     S: Clone + Send + Sync + 'static,
 {
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
-        let router = Router::<S>::new().layer(TraceLayer::new_for_http());
+        let router = Router::<S>::new()
+            .layer(request_id_layer())
+            .layer(TraceLayer::new_for_http());
 
         Self {
             name,
@@ -49,7 +51,7 @@ where
     }
 
     pub async fn run(self) {
-        init();
+        init_tracing(self.name);
 
         for plugin in &self.plugins {
             info!("🔌 Loading plugin: {}", plugin.name());
