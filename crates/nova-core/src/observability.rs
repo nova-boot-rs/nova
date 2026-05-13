@@ -1,9 +1,9 @@
-use axum::http::header::{HeaderName, HeaderValue};
 use axum::extract::Request;
+use axum::http::header::{HeaderName, HeaderValue};
 use axum::middleware::Next;
 use axum::response::Response;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Once;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tracing::info;

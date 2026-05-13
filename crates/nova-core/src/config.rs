@@ -226,7 +226,9 @@ fn resolve_secrets(
                     }
                 }
 
-                Err(NovaError::NotFound(format!("secret '{secret_key}' was not resolved")))
+                Err(NovaError::NotFound(format!(
+                    "secret '{secret_key}' was not resolved"
+                )))
             } else {
                 Ok(Value::String(text))
             }

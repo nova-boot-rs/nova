@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemStruct};
+use syn::{ItemStruct, parse_macro_input};
 
 fn route_macro(method: &str, path: String, handler: syn::ItemFn) -> TokenStream {
     let fn_name = &handler.sig.ident;
@@ -53,31 +53,51 @@ pub fn rest_controller(_args: TokenStream, input: TokenStream) -> TokenStream {
 // get macro: #[get("/path")]
 #[proc_macro_attribute]
 pub fn get(args: TokenStream, input: TokenStream) -> TokenStream {
-    route_macro("GET", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+    route_macro(
+        "GET",
+        parse_macro_input!(args as syn::LitStr).value(),
+        parse_macro_input!(input as syn::ItemFn),
+    )
 }
 
 // post macro: #[post("/path")]
 #[proc_macro_attribute]
 pub fn post(args: TokenStream, input: TokenStream) -> TokenStream {
-    route_macro("POST", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+    route_macro(
+        "POST",
+        parse_macro_input!(args as syn::LitStr).value(),
+        parse_macro_input!(input as syn::ItemFn),
+    )
 }
 
 // put macro: #[put("/path")]
 #[proc_macro_attribute]
 pub fn put(args: TokenStream, input: TokenStream) -> TokenStream {
-    route_macro("PUT", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+    route_macro(
+        "PUT",
+        parse_macro_input!(args as syn::LitStr).value(),
+        parse_macro_input!(input as syn::ItemFn),
+    )
 }
 
 // delete macro: #[delete("/path")]
 #[proc_macro_attribute]
 pub fn delete(args: TokenStream, input: TokenStream) -> TokenStream {
-    route_macro("DELETE", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+    route_macro(
+        "DELETE",
+        parse_macro_input!(args as syn::LitStr).value(),
+        parse_macro_input!(input as syn::ItemFn),
+    )
 }
 
 // patch macro: #[patch("/path")]
 #[proc_macro_attribute]
 pub fn patch(args: TokenStream, input: TokenStream) -> TokenStream {
-    route_macro("PATCH", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+    route_macro(
+        "PATCH",
+        parse_macro_input!(args as syn::LitStr).value(),
+        parse_macro_input!(input as syn::ItemFn),
+    )
 }
 
 #[proc_macro_derive(NovaRequest)]
