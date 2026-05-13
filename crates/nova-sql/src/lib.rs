@@ -3,6 +3,11 @@ pub use sea_orm::{
     ConnectionTrait, Database, DatabaseConnection, DbBackend, EntityTrait, Schema, Statement,
 };
 pub use sea_orm_migration::prelude::*;
+use serde_json::Value as JsonValue;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 
 /// Type alias for database sync task closures
 type SyncTask = Box<
@@ -17,6 +22,46 @@ pub struct NovaSql {
     pub db: DatabaseConnection,
     pub allow_drop: bool,
     sync_tasks: Vec<SyncTask>,
+    cache_store: Option<Arc<dyn QueryCacheStore>>,
+}
+
+#[async_trait]
+pub trait QueryCacheStore: Send + Sync {
+    async fn get(&self, key: &str) -> Option<String>;
+    async fn set(&self, key: &str, value: String, ttl: Duration);
+    async fn del(&self, key: &str);
+}
+
+#[derive(Clone, Default)]
+pub struct InMemoryQueryCache {
+    inner: Arc<Mutex<HashMap<String, (String, Instant)>>>,
+}
+
+#[async_trait]
+impl QueryCacheStore for InMemoryQueryCache {
+    async fn get(&self, key: &str) -> Option<String> {
+        let mut map = self.inner.lock().await;
+        if let Some((value, expires_at)) = map.get(key)
+            && Instant::now() <= *expires_at
+        {
+            return Some(value.clone());
+        }
+
+        map.remove(key);
+        None
+    }
+
+    async fn set(&self, key: &str, value: String, ttl: Duration) {
+        let expires_at = Instant::now() + ttl;
+        self.inner
+            .lock()
+            .await
+            .insert(key.to_string(), (value, expires_at));
+    }
+
+    async fn del(&self, key: &str) {
+        self.inner.lock().await.remove(key);
+    }
 }
 
 impl NovaSql {
@@ -28,6 +73,45 @@ impl NovaSql {
             db,
             allow_drop,
             sync_tasks: Vec::new(),
+            cache_store: None,
+        }
+    }
+
+    pub fn with_cache_store(mut self, cache_store: Arc<dyn QueryCacheStore>) -> Self {
+        self.cache_store = Some(cache_store);
+        self
+    }
+
+    pub async fn cached_json<F, Fut>(
+        &self,
+        key: &str,
+        ttl: Duration,
+        fetcher: F,
+    ) -> Result<JsonValue, DbErr>
+    where
+        F: FnOnce(&DatabaseConnection) -> Fut,
+        Fut: std::future::Future<Output = Result<JsonValue, DbErr>>,
+    {
+        if let Some(cache) = &self.cache_store
+            && let Some(raw) = cache.get(key).await
+            && let Ok(value) = serde_json::from_str::<JsonValue>(&raw)
+        {
+            return Ok(value);
+            }
+
+        let value = fetcher(&self.db).await?;
+
+        if let Some(cache) = &self.cache_store {
+            let raw = serde_json::to_string(&value).unwrap_or_else(|_| "null".to_string());
+            cache.set(key, raw, ttl).await;
+        }
+
+        Ok(value)
+    }
+
+    pub async fn invalidate_cache(&self, key: &str) {
+        if let Some(cache) = &self.cache_store {
+            cache.del(key).await;
         }
     }
 
@@ -163,5 +247,26 @@ impl NovaPlugin for NovaSql {
 
     fn extend_router(&self, router: Router) -> Router {
         router.layer(Extension(self.db.clone()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn in_memory_query_cache_expires_entries() {
+        let cache = InMemoryQueryCache::default();
+
+        cache
+            .set("users:1", "{\"id\":1}".to_string(), Duration::from_millis(10))
+            .await;
+
+        let hit = cache.get("users:1").await;
+        assert!(hit.is_some());
+
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        let miss = cache.get("users:1").await;
+        assert!(miss.is_none());
     }
 }

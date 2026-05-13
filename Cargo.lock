@@ -1372,6 +1372,8 @@ dependencies = [
  "sea-orm",
  "sea-orm-migration",
  "sea-query",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

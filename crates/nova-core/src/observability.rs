@@ -65,7 +65,7 @@ pub fn init_tracing(service_name: &str) {
             .with_thread_ids(true)
             .with_thread_names(true)
             .with_ansi(true)
-            .with_writer(move || std::io::stdout())
+            .with_writer(std::io::stdout)
             .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
             .init();
 

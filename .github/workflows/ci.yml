@@ -7,6 +7,16 @@ on:
 jobs:
     ci:
         runs-on: ubuntu-latest
+        services:
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
@@ -16,3 +26,7 @@ jobs:
             - run: cargo fmt --check
             - run: cargo clippy -- -D warnings
             - run: cargo test
+            - name: Run Redis integration test
+              env:
+                NOVA_TEST_REDIS_URL: redis://127.0.0.1:6379/
+              run: cargo test -p nova-core --features redis-store -- --ignored redis_store_basic_flow

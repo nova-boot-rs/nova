@@ -12,7 +12,10 @@ async fn redis_store_basic_flow() {
     let backend = RedisStore::new(&url).expect("create redis store");
     let store: Arc<dyn DistributedStore> = Arc::new(backend);
 
-    let now_nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    let now_nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
     let key = format!("test:nova:{}:{}", std::process::id(), now_nanos);
 
     // ensure clean
