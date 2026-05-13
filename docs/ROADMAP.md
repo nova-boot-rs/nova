@@ -30,4 +30,4 @@ This document turns the feature spec into a staged implementation plan.
 - Dev CLI, test helpers, and container/deployment support.
 
 ## Immediate next step
-Implement the `nova-core` module split so future work can land without turning `lib.rs` into a monolith.
+Implement layered configuration with typed sources, env overrides, and a secrets abstraction.
