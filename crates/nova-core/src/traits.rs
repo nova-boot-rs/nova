@@ -13,6 +13,24 @@ pub trait NovaModule {
     fn module_name(&self) -> &'static str;
 }
 
+pub trait NovaRequestModel {
+    fn request_model_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        std::any::type_name::<Self>()
+    }
+}
+
+pub trait NovaResponseModel {
+    fn response_model_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        std::any::type_name::<Self>()
+    }
+}
+
 #[async_trait::async_trait]
 pub trait NovaLifecycle: Send + Sync {
     async fn on_start(&self) {}

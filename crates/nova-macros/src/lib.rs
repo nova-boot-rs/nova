@@ -1,6 +1,32 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ItemStruct, parse_macro_input};
+use syn::{parse_macro_input, ItemStruct};
+
+fn route_macro(method: &str, path: String, handler: syn::ItemFn) -> TokenStream {
+    let fn_name = &handler.sig.ident;
+    let route_expr = match method {
+        "GET" => quote!(::nova_core::axum::routing::get(#fn_name)),
+        "POST" => quote!(::nova_core::axum::routing::post(#fn_name)),
+        "PUT" => quote!(::nova_core::axum::routing::put(#fn_name)),
+        "DELETE" => quote!(::nova_core::axum::routing::delete(#fn_name)),
+        "PATCH" => quote!(::nova_core::axum::routing::patch(#fn_name)),
+        _ => quote!(::nova_core::axum::routing::get(#fn_name)),
+    };
+
+    let expanded = quote! {
+        #handler
+
+        ::nova_core::inventory::submit! {
+            ::nova_core::NovaRoute {
+                path: #path,
+                method: #method,
+                handler: || #route_expr,
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
 
 // rest_controller macro: #[rest_controller]
 #[proc_macro_attribute]
@@ -27,110 +53,53 @@ pub fn rest_controller(_args: TokenStream, input: TokenStream) -> TokenStream {
 // get macro: #[get("/path")]
 #[proc_macro_attribute]
 pub fn get(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value();
-    let input_fn = parse_macro_input!(input as syn::ItemFn);
-    let fn_name = &input_fn.sig.ident;
-
-    let expanded = quote! {
-        #input_fn
-
-        // Submit this route to the Nova inventory at compile time
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
-                path: #path,
-                method: "GET",
-                handler: || ::nova_core::axum::routing::get(#fn_name),
-            }
-        }
-    };
-
-    TokenStream::from(expanded)
+    route_macro("GET", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
 }
 
 // post macro: #[post("/path")]
 #[proc_macro_attribute]
 pub fn post(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value();
-    let input_fn = parse_macro_input!(input as syn::ItemFn);
-    let fn_name = &input_fn.sig.ident;
-
-    let expanded = quote! {
-        #input_fn
-
-        // Submit this route to the Nova inventory at compile time
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
-                path: #path,
-                method: "POST",
-                handler: || ::nova_core::axum::routing::post(#fn_name),
-            }
-        }
-    };
-    TokenStream::from(expanded)
+    route_macro("POST", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
 }
 
 // put macro: #[put("/path")]
 #[proc_macro_attribute]
 pub fn put(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value();
-    let input_fn = parse_macro_input!(input as syn::ItemFn);
-    let fn_name = &input_fn.sig.ident;
-
-    let expanded = quote! {
-        #input_fn
-
-        // Submit this route to the Nova inventory at compile time
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
-                path: #path,
-                method: "PUT",
-                handler: || ::nova_core::axum::routing::put(#fn_name),
-            }
-        }
-    };
-    TokenStream::from(expanded)
+    route_macro("PUT", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
 }
 
 // delete macro: #[delete("/path")]
 #[proc_macro_attribute]
 pub fn delete(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value();
-    let input_fn = parse_macro_input!(input as syn::ItemFn);
-    let fn_name = &input_fn.sig.ident;
-
-    let expanded = quote! {
-        #input_fn
-
-        // Submit this route to the Nova inventory at compile time
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
-                path: #path,
-                method: "DELETE",
-                handler: || ::nova_core::axum::routing::delete(#fn_name),
-            }
-        }
-    };
-    TokenStream::from(expanded)
+    route_macro("DELETE", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
 }
 
 // patch macro: #[patch("/path")]
 #[proc_macro_attribute]
 pub fn patch(args: TokenStream, input: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(args as syn::LitStr).value();
-    let input_fn = parse_macro_input!(input as syn::ItemFn);
-    let fn_name = &input_fn.sig.ident;
+    route_macro("PATCH", parse_macro_input!(args as syn::LitStr).value(), parse_macro_input!(input as syn::ItemFn))
+}
+
+#[proc_macro_derive(NovaRequest)]
+pub fn request_model(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as ItemStruct);
+    let name = &input.ident;
 
     let expanded = quote! {
-        #input_fn
-
-        // Submit this route to the Nova inventory at compile time
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
-                path: #path,
-                method: "PATCH",
-                handler: || ::nova_core::axum::routing::patch(#fn_name),
-            }
-        }
+        impl ::nova_core::NovaRequestModel for #name {}
     };
+
+    TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(NovaResponse)]
+pub fn response_model(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as ItemStruct);
+    let name = &input.ident;
+
+    let expanded = quote! {
+        impl ::nova_core::NovaResponseModel for #name {}
+    };
+
     TokenStream::from(expanded)
 }

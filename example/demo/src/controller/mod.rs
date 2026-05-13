@@ -1,21 +1,21 @@
 use nova_core::{
     ApiResponse, Deserialize, Json, ListResponse, NovaError, NovaResult, Serialize,
-    axum::Extension, axum::http::StatusCode, get, post,
+    axum::Extension, axum::http::StatusCode, get, post, NovaRequest, NovaResponse,
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, NovaRequest)]
 pub struct MessageReceived {
     #[serde(rename = "content", alias = "message")]
     pub content: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, NovaResponse)]
 pub struct MessageSent {
     pub reply: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, NovaResponse)]
 pub struct UserResponse {
     pub id: i32,
     pub username: String,

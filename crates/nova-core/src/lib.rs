@@ -18,7 +18,7 @@ pub use config::{EnvConfigSource, JsonFileConfigSource, NovaConfig, NovaConfigBu
 pub use observability::{init_tracing, NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId};
 pub use response::{ApiResponse, EmptyResponse, ListResponse};
 pub use runtime::{NovaApp, NovaRoute};
-pub use traits::{NovaLifecycle, NovaModule, NovaPlugin, NovaRouterExtender};
+pub use traits::{NovaLifecycle, NovaModule, NovaPlugin, NovaRequestModel, NovaResponseModel, NovaRouterExtender};
 
 extern crate nova_macros;
-pub use nova_macros::{delete, get, patch, post, put, rest_controller};
+pub use nova_macros::{delete, get, patch, post, put, rest_controller, NovaRequest, NovaResponse};

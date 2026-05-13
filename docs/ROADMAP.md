@@ -30,4 +30,4 @@ This document turns the feature spec into a staged implementation plan.
 - Dev CLI, test helpers, and container/deployment support.
 
 ## Immediate next step
-Build routing macros and request/response derive macros on top of the runtime and observability layers.
+Implement resilience primitives: circuit breaker, retry policies, bulkheads, and rate limiting.
