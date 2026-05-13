@@ -1,10 +1,9 @@
 use crate::app_state::{AppState, RuntimeConfig};
 use nova_core::{
-    ApiResponse, ApiVersion, Deserialize, Json, ListResponse, NovaError, NovaRequest,
-    NovaResponse, NovaResult, NovaValidate, PaginatedResponse, PaginationQuery, Serialize,
-    ValidationErrors, VersionedResponse, max_length, min_length, required_string,
-    validate_request,
-    axum::Extension, axum::extract::Query, axum::http::StatusCode, get, post,
+    ApiResponse, ApiVersion, Deserialize, Json, ListResponse, NovaError, NovaRequest, NovaResponse,
+    NovaResult, NovaValidate, PaginatedResponse, PaginationQuery, Serialize, ValidationErrors,
+    VersionedResponse, axum::Extension, axum::extract::Query, axum::http::StatusCode, get,
+    max_length, min_length, post, required_string, validate_request,
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
@@ -211,14 +210,14 @@ pub async fn check_db(
     Json(ApiResponse::with_status(StatusCode::OK, status))
 }
 
-/// Health check endpoint
-#[get("/health")]
-pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
-    Json(ApiResponse::with_status(
-        StatusCode::OK,
-        serde_json::json!({"status": "healthy"}),
-    ))
-}
+// /// Health check endpoint
+// #[get("/health")]
+// pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
+//     Json(ApiResponse::with_status(
+//         StatusCode::OK,
+//         serde_json::json!({"status": "healthy"}),
+//     ))
+// }
 
 /// Returns the current runtime config loaded by the hot reloader.
 #[get("/runtime-config")]

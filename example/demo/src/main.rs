@@ -21,9 +21,7 @@ async fn main() {
     )
     .expect("failed to start config hot reloader");
 
-    let app_state = AppState {
-        runtime_config,
-    };
+    let app_state = AppState { runtime_config };
 
     let sql_plugin = NovaSql::connect("sqlite:people.db?mode=rwc", true)
         .await
