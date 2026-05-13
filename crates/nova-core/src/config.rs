@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Map, Value};
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
@@ -57,14 +57,14 @@ where
 }
 
 fn build_json_file_config<T>(
-    path: &PathBuf,
+    path: &Path,
     defaults: &Option<T>,
     env_prefix: &Option<String>,
 ) -> NovaResult<NovaConfig<T>>
 where
     T: Serialize + DeserializeOwned + Clone,
 {
-    let mut builder = NovaConfigBuilder::new().with_json_file(path.clone());
+    let mut builder = NovaConfigBuilder::new().with_json_file(path.to_path_buf());
 
     if let Some(defaults) = defaults.clone() {
         builder = builder.defaults(defaults);

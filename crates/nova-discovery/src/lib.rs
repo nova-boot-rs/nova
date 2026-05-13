@@ -77,7 +77,12 @@ pub mod redis_store {
             Ok(v)
         }
 
-        async fn set_ex(&self, key: &str, val: i64, ttl_seconds: usize) -> Result<(), DiscoveryError> {
+        async fn set_ex(
+            &self,
+            key: &str,
+            val: i64,
+            ttl_seconds: usize,
+        ) -> Result<(), DiscoveryError> {
             let mut conn = self
                 .client
                 .get_tokio_connection()

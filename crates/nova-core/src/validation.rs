@@ -78,7 +78,11 @@ mod tests {
                 errors.push(err);
             }
 
-            errors.into_result()
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(errors)
+            }
         }
     }
 

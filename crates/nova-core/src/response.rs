@@ -193,7 +193,11 @@ impl<T: Serialize> PaginatedResponse<T> {
             items.into_iter().skip(offset).take(per_page).collect()
         };
 
-        let total_pages = if total == 0 { 0 } else { total.div_ceil(per_page) };
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(per_page)
+        };
 
         Self {
             items: page_items,

@@ -4,8 +4,8 @@ use crate::traits::NovaPlugin;
 use axum::Json;
 use axum::extract::Extension;
 use axum::http::StatusCode;
-use axum::routing::get;
 use axum::routing::MethodRouter;
+use axum::routing::get;
 use axum::{Router, serve};
 use nova_observability::{init_tracing, request_id_layer};
 use serde_json::json;
@@ -109,17 +109,31 @@ where
 
         let mut app_router = self.router.with_state(self.state.clone());
 
+        // for route in inventory::iter::<NovaRoute> {
+        //     info!("📡 Registering {} route: {}", route.method, route.path);
+        //     let method_router = (route.handler)();
+        //     app_router = app_router.route(route.path, method_router);
+        // }
+        use std::collections::HashSet;
+        let mut registered = HashSet::new();
+
         for route in inventory::iter::<NovaRoute> {
+            let key = (route.method, route.path);
             info!("📡 Registering {} route: {}", route.method, route.path);
+            if !registered.insert(key) {
+                panic!("Duplicate route detected: {} {}", route.method, route.path);
+            }
+
             let method_router = (route.handler)();
             app_router = app_router.route(route.path, method_router);
         }
 
-        let mut final_router = app_router
-            .layer(axum::Extension(self.state.clone()))
-            .layer(axum::Extension(OpenApiMeta {
-                service_name: self.name.to_string(),
-            }));
+        let mut final_router =
+            app_router
+                .layer(axum::Extension(self.state.clone()))
+                .layer(axum::Extension(OpenApiMeta {
+                    service_name: self.name.to_string(),
+                }));
 
         for plugin in &self.plugins {
             info!("🔌 Injecting state for: {}", plugin.name());
