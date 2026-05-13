@@ -97,7 +97,7 @@ impl NovaSql {
             && let Ok(value) = serde_json::from_str::<JsonValue>(&raw)
         {
             return Ok(value);
-            }
+        }
 
         let value = fetcher(&self.db).await?;
 
@@ -259,7 +259,11 @@ mod tests {
         let cache = InMemoryQueryCache::default();
 
         cache
-            .set("users:1", "{\"id\":1}".to_string(), Duration::from_millis(10))
+            .set(
+                "users:1",
+                "{\"id\":1}".to_string(),
+                Duration::from_millis(10),
+            )
             .await;
 
         let hit = cache.get("users:1").await;
