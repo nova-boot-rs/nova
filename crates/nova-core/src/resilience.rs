@@ -7,8 +7,11 @@ use axum::response::{IntoResponse, Response};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
+use crate::distributed::DistributedStore;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
+use async_trait::async_trait;
+use crate::config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend};
 
 /// Simple in-memory circuit breaker with manual record API.
 #[derive(Debug)]
@@ -17,6 +20,157 @@ pub struct CircuitBreaker {
     threshold: u32,
     open_until: Arc<Mutex<Option<Instant>>>,
     open_duration: Duration,
+}
+
+/// Circuit breaker that stores state in a distributed store (Redis, etc.)
+#[derive(Clone)]
+pub struct DistributedCircuitBreaker {
+    store: Arc<dyn DistributedStore>,
+    name: String,
+    threshold: u32,
+    open_ttl_seconds: usize,
+}
+
+impl DistributedCircuitBreaker {
+    pub fn new(store: Arc<dyn DistributedStore>, name: impl Into<String>, threshold: u32, open_ttl_seconds: usize) -> Self {
+        Self { store, name: name.into(), threshold, open_ttl_seconds }
+    }
+
+    fn failures_key(&self) -> String { format!("cb:fail:{}", self.name) }
+    fn open_key(&self) -> String { format!("cb:open:{}", self.name) }
+
+    pub async fn allow(&self) -> Result<bool, crate::NovaError> {
+        if let Some(v) = self.store.get_i64(&self.open_key()).await? {
+            if v > 0 { return Ok(false); }
+        }
+        Ok(true)
+    }
+
+    pub async fn record_failure(&self) -> Result<(), crate::NovaError> {
+        let f = self.store.incr(&self.failures_key()).await? as u32;
+        if f >= self.threshold {
+            // open the breaker for TTL seconds
+            self.store.set_ex(&self.open_key(), 1, self.open_ttl_seconds).await?;
+            // reset failures
+            self.store.del(&self.failures_key()).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn record_success(&self) -> Result<(), crate::NovaError> {
+        // clear counters and open flag
+        self.store.del(&self.failures_key()).await?;
+        self.store.del(&self.open_key()).await?;
+        Ok(())
+    }
+}
+
+/// Distributed rate limiter using fixed window counters in the store.
+#[derive(Clone)]
+pub struct DistributedRateLimiter {
+    store: Arc<dyn DistributedStore>,
+    prefix: String,
+    capacity: i64,
+    window_seconds: usize,
+}
+
+impl DistributedRateLimiter {
+    pub fn new(store: Arc<dyn DistributedStore>, prefix: impl Into<String>, capacity: i64, window_seconds: usize) -> Self {
+        Self { store, prefix: prefix.into(), capacity, window_seconds }
+    }
+
+    fn key_for(&self, client: &str) -> String {
+        format!("rl:{}:{}", self.prefix, client)
+    }
+
+    /// Attempt to consume a single token for `client`.
+    pub async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> {
+        let key = self.key_for(client);
+        let v = self.store.incr(&key).await?;
+        if v == 1 {
+            // first set the expiry for the window
+            self.store.set_ex(&key, v, self.window_seconds).await?;
+        }
+        Ok(v <= self.capacity)
+    }
+}
+
+/// Trait abstraction for circuit breaker backends (in-memory or distributed).
+#[async_trait]
+pub trait CircuitBreakerBackend: Send + Sync + 'static {
+    async fn allow(&self) -> Result<bool, crate::NovaError>;
+    async fn record_failure(&self) -> Result<(), crate::NovaError>;
+    async fn record_success(&self) -> Result<(), crate::NovaError>;
+}
+
+#[async_trait]
+impl CircuitBreakerBackend for CircuitBreaker {
+    async fn allow(&self) -> Result<bool, crate::NovaError> { Ok(self.allow().await) }
+    async fn record_failure(&self) -> Result<(), crate::NovaError> { self.record_failure().await; Ok(()) }
+    async fn record_success(&self) -> Result<(), crate::NovaError> { self.record_success().await; Ok(()) }
+}
+
+#[async_trait]
+impl CircuitBreakerBackend for DistributedCircuitBreaker {
+    async fn allow(&self) -> Result<bool, crate::NovaError> { self.allow().await }
+    async fn record_failure(&self) -> Result<(), crate::NovaError> { self.record_failure().await }
+    async fn record_success(&self) -> Result<(), crate::NovaError> { self.record_success().await }
+}
+
+/// Trait abstraction for rate limiter backends.
+#[async_trait]
+pub trait RateLimiterBackend: Send + Sync + 'static {
+    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError>;
+}
+
+#[async_trait]
+impl RateLimiterBackend for RateLimiter {
+    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> {
+        Ok(self.allow(client, 1.0).await)
+    }
+}
+
+#[async_trait]
+impl RateLimiterBackend for DistributedRateLimiter {
+    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> { self.allow(client).await }
+}
+
+/// Build a `CircuitBreakerBackend` from `CircuitBreakerConfig` and an optional distributed store.
+pub fn build_circuit_breaker_backend(
+    name: &str,
+    cfg: &CircuitBreakerConfig,
+    store_opt: Option<Arc<dyn DistributedStore>>,
+) -> Arc<dyn CircuitBreakerBackend> {
+    match &cfg.backend {
+        ResilienceBackend::Local => Arc::new(CircuitBreaker::new(cfg.threshold, Duration::from_secs(cfg.open_ttl_seconds as u64))),
+        ResilienceBackend::Redis { .. } => {
+            if let Some(store) = store_opt {
+                Arc::new(DistributedCircuitBreaker::new(store, name.to_string(), cfg.threshold, cfg.open_ttl_seconds))
+            } else {
+                // fallback to local if no store provided
+                Arc::new(CircuitBreaker::new(cfg.threshold, Duration::from_secs(cfg.open_ttl_seconds as u64)))
+            }
+        }
+    }
+}
+
+/// Build a `RateLimiterBackend` from `RateLimiterConfig` and an optional distributed store.
+pub fn build_rate_limiter_backend(
+    prefix: &str,
+    cfg: &RateLimiterConfig,
+    store_opt: Option<Arc<dyn DistributedStore>>,
+) -> Arc<dyn RateLimiterBackend> {
+    match &cfg.backend {
+        ResilienceBackend::Local => Arc::new(RateLimiter::new(cfg.capacity as f64, cfg.capacity as f64 / cfg.window_seconds as f64)),
+        ResilienceBackend::Redis { prefix: cfg_prefix, .. } => {
+            if let Some(store) = store_opt {
+                let pfx = cfg_prefix.clone().unwrap_or_else(|| prefix.to_string());
+                Arc::new(DistributedRateLimiter::new(store, pfx, cfg.capacity, cfg.window_seconds))
+            } else {
+                Arc::new(RateLimiter::new(cfg.capacity as f64, cfg.capacity as f64 / cfg.window_seconds as f64))
+            }
+        }
+    }
 }
 
 impl CircuitBreaker {
@@ -196,6 +350,37 @@ pub async fn circuit_breaker_middleware(
     resp
 }
 
+/// Boxed middleware that accepts any `CircuitBreakerBackend` (in-memory or distributed).
+pub async fn circuit_breaker_middleware_boxed(
+    state: Arc<dyn CircuitBreakerBackend>,
+    req: Request<Body>,
+    next: Next,
+) -> Response {
+    match state.allow().await {
+        Ok(allowed) => {
+            if !allowed {
+                let body = Json(json!({"error": "circuit_open", "message": "service temporarily unavailable"}));
+                return (StatusCode::SERVICE_UNAVAILABLE, body).into_response();
+            }
+        }
+        Err(_) => {
+            let body = Json(json!({"error": "internal_error", "message": "resilience backend error"}));
+            return (StatusCode::INTERNAL_SERVER_ERROR, body).into_response();
+        }
+    }
+
+    let resp = next.run(req).await;
+
+    let status = resp.status();
+    if status.is_server_error() {
+        let _ = state.record_failure().await;
+    } else {
+        let _ = state.record_success().await;
+    }
+
+    resp
+}
+
 /// Middleware: simple token-bucket rate limiting by `x-client-id` header.
 pub async fn rate_limiter_middleware(
     state: Arc<RateLimiter>,
@@ -215,6 +400,32 @@ pub async fn rate_limiter_middleware(
     }
 
     next.run(req).await
+}
+
+/// Boxed rate limiter middleware that accepts any `RateLimiterBackend` implementation.
+pub async fn rate_limiter_middleware_boxed(
+    state: Arc<dyn RateLimiterBackend>,
+    req: Request<Body>,
+    next: Next,
+) -> Response {
+    let key = req
+        .headers()
+        .get("x-client-id")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("anonymous")
+        .to_string();
+
+    match state.allow(&key).await {
+        Ok(true) => next.run(req).await,
+        Ok(false) => {
+            let body = Json(json!({"error": "too_many_requests", "message": "rate limit exceeded"}));
+            (StatusCode::TOO_MANY_REQUESTS, body).into_response()
+        }
+        Err(_) => {
+            let body = Json(json!({"error": "internal_error", "message": "resilience backend error"}));
+            (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+        }
+    }
 }
 
 /// Middleware: bulkhead/semaphore-based concurrency limiter.

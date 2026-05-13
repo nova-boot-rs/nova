@@ -1,4 +1,4 @@
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::env;
 use std::fs;
@@ -338,4 +338,55 @@ mod tests {
 
         assert_eq!(root["nested"]["enabled"], Value::Bool(true));
     }
+}
+
+// Resilience configuration types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum ResilienceBackend {
+    Local,
+    Redis { url: String, prefix: Option<String> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CircuitBreakerConfig {
+    pub backend: ResilienceBackend,
+    pub threshold: u32,
+    /// TTL in seconds for open state when using distributed backend
+    pub open_ttl_seconds: usize,
+}
+
+impl Default for CircuitBreakerConfig {
+    fn default() -> Self {
+        Self {
+            backend: ResilienceBackend::Local,
+            threshold: 5,
+            open_ttl_seconds: 60,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimiterConfig {
+    pub backend: ResilienceBackend,
+    pub capacity: i64,
+    pub window_seconds: usize,
+    pub prefix: Option<String>,
+}
+
+impl Default for RateLimiterConfig {
+    fn default() -> Self {
+        Self {
+            backend: ResilienceBackend::Local,
+            capacity: 100,
+            window_seconds: 60,
+            prefix: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ResilienceConfig {
+    pub circuit_breaker: Option<CircuitBreakerConfig>,
+    pub rate_limiter: Option<RateLimiterConfig>,
 }

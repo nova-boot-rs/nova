@@ -27,6 +27,7 @@ pub use observability::{
     NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId, init_tracing,
 };
 pub use resilience::{Bulkhead, CircuitBreaker, RateLimiter, RetryPolicy};
+pub use resilience::{DistributedCircuitBreaker, DistributedRateLimiter};
 pub use response::{ApiResponse, EmptyResponse, ListResponse};
 pub use runtime::{NovaApp, NovaRoute};
 pub use traits::{
