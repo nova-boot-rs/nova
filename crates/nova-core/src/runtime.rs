@@ -1,6 +1,8 @@
+use crate::openapi::build_openapi_document;
 use crate::response::ApiResponse;
 use crate::traits::NovaPlugin;
 use axum::Json;
+use axum::extract::Extension;
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::routing::MethodRouter;
@@ -16,6 +18,15 @@ async fn framework_health() -> Json<ApiResponse<serde_json::Value>> {
         StatusCode::OK,
         json!({"status": "healthy", "service": "nova"}),
     ))
+}
+
+#[derive(Clone)]
+struct OpenApiMeta {
+    service_name: String,
+}
+
+async fn openapi_json(Extension(meta): Extension<OpenApiMeta>) -> Json<serde_json::Value> {
+    Json(build_openapi_document(&meta.service_name))
 }
 
 async fn shutdown_signal() {
@@ -69,6 +80,7 @@ where
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
         let router = Router::<S>::new()
             .route("/health", get(framework_health))
+            .route("/openapi.json", get(openapi_json))
             .layer(request_id_layer())
             .layer(TraceLayer::new_for_http());
 
@@ -103,7 +115,11 @@ where
             app_router = app_router.route(route.path, method_router);
         }
 
-        let mut final_router = app_router.layer(axum::Extension(self.state.clone()));
+        let mut final_router = app_router
+            .layer(axum::Extension(self.state.clone()))
+            .layer(axum::Extension(OpenApiMeta {
+                service_name: self.name.to_string(),
+            }));
 
         for plugin in &self.plugins {
             info!("🔌 Injecting state for: {}", plugin.name());

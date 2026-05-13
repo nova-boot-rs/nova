@@ -6,6 +6,24 @@ use nova_core::{
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
+fn demo_openapi_fragment() -> serde_json::Value {
+    serde_json::json!({
+        "tags": [
+            {
+                "name": "demo",
+                "description": "Demo endpoints for Nova framework"
+            }
+        ]
+    })
+}
+
+nova_core::inventory::submit! {
+    nova_core::OpenApiHook {
+        name: "demo-tag-fragment",
+        provider: demo_openapi_fragment,
+    }
+}
+
 #[derive(Deserialize, NovaRequest)]
 pub struct MessageReceived {
     #[serde(rename = "content", alias = "message")]

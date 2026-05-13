@@ -5,6 +5,7 @@ pub use inventory;
 pub use serde::{Deserialize, Serialize};
 
 pub mod config;
+pub mod openapi;
 pub mod resilience;
 pub mod runtime;
 pub mod traits;
@@ -26,6 +27,7 @@ pub use nova_observability as observability;
 pub use nova_observability::{
     NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId, init_tracing,
 };
+pub use openapi::{OpenApiHook, build_openapi_document};
 pub use resilience::{Bulkhead, CircuitBreaker, RateLimiter, RetryPolicy};
 pub use resilience::{DistributedCircuitBreaker, DistributedRateLimiter};
 pub use response::{

@@ -21,7 +21,7 @@ Current stage: Phase 4 (early)
 ## Phase 3: API ergonomics
 - [DONE] Routing macros for common HTTP verbs.
 - [IN PROGRESS] Request validation and response helpers.
-- [PLANNED] OpenAPI generation hooks.
+- [DONE] OpenAPI generation hooks.
 - [DONE] Versioning and pagination helpers.
 
 ## Phase 4: Resilience and data
