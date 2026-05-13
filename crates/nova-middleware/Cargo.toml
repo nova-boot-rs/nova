@@ -1,0 +1,8 @@
+[package]
+name = "nova-middleware"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+nova-core = { path = "../nova-core" }
+serde_json.workspace = true

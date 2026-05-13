@@ -1,6 +1,15 @@
 [workspace]
 members = [
-    "crates/nova-core", "crates/nova-macros", "crates/nova-sql", "example/demo",
+    "crates/nova-cli",
+    "crates/nova-core",
+    "crates/nova-discovery",
+    "crates/nova-macros",
+    "crates/nova-middleware",
+    "crates/nova-observability",
+    "crates/plugins/nova-graphdb",
+    "crates/plugins/nova-nosql",
+    "crates/plugins/nova-sql",
+    "example/demo",
 ]
 resolver = "2"
 

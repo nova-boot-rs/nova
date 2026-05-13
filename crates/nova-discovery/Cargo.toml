@@ -1,0 +1,12 @@
+[package]
+name = "nova-discovery"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+redis = { workspace = true, optional = true, features = ["aio", "tokio-comp"] }
+
+[features]
+default = []
+redis-store = ["redis"]

@@ -1337,14 +1337,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-cli"
+version = "0.1.0"
+
+[[package]]
 name = "nova-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "axum",
  "inventory",
+ "nova-discovery",
  "nova-macros",
- "redis",
+ "nova-observability",
  "sea-orm",
  "serde",
  "serde_json",
@@ -1356,12 +1361,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-discovery"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "redis",
+]
+
+[[package]]
+name = "nova-graphdb"
+version = "0.1.0"
+
+[[package]]
 name = "nova-macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "nova-middleware"
+version = "0.1.0"
+dependencies = [
+ "nova-core",
+ "serde_json",
+]
+
+[[package]]
+name = "nova-nosql"
+version = "0.1.0"
+
+[[package]]
+name = "nova-observability"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

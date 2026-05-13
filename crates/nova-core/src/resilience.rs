@@ -1,13 +1,6 @@
 use crate::config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend};
-use crate::distributed::DistributedStore;
 use async_trait::async_trait;
-use axum::Json;
-use axum::body::Body;
-use axum::http::Request;
-use axum::http::StatusCode;
-use axum::middleware::Next;
-use axum::response::{IntoResponse, Response};
-use serde_json::json;
+use nova_discovery::DistributedStore;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -393,121 +386,6 @@ impl RateLimiter {
             false
         }
     }
-}
-
-/// Middleware: rejects requests when circuit is open, otherwise forwards and records success/failure.
-pub async fn circuit_breaker_middleware(
-    state: Arc<CircuitBreaker>,
-    req: Request<Body>,
-    next: Next,
-) -> Response {
-    if !state.allow().await {
-        let body =
-            Json(json!({"error": "circuit_open", "message": "service temporarily unavailable"}));
-        return (StatusCode::SERVICE_UNAVAILABLE, body).into_response();
-    }
-
-    let resp = next.run(req).await;
-
-    // record based on status
-    let status = resp.status();
-    if status.is_server_error() {
-        state.record_failure().await;
-    } else {
-        state.record_success().await;
-    }
-
-    resp
-}
-
-/// Boxed middleware that accepts any `CircuitBreakerBackend` (in-memory or distributed).
-pub async fn circuit_breaker_middleware_boxed(
-    state: Arc<dyn CircuitBreakerBackend>,
-    req: Request<Body>,
-    next: Next,
-) -> Response {
-    match state.allow().await {
-        Ok(allowed) => {
-            if !allowed {
-                let body = Json(
-                    json!({"error": "circuit_open", "message": "service temporarily unavailable"}),
-                );
-                return (StatusCode::SERVICE_UNAVAILABLE, body).into_response();
-            }
-        }
-        Err(_) => {
-            let body =
-                Json(json!({"error": "internal_error", "message": "resilience backend error"}));
-            return (StatusCode::INTERNAL_SERVER_ERROR, body).into_response();
-        }
-    }
-
-    let resp = next.run(req).await;
-
-    let status = resp.status();
-    if status.is_server_error() {
-        let _ = state.record_failure().await;
-    } else {
-        let _ = state.record_success().await;
-    }
-
-    resp
-}
-
-/// Middleware: simple token-bucket rate limiting by `x-client-id` header.
-pub async fn rate_limiter_middleware(
-    state: Arc<RateLimiter>,
-    req: Request<Body>,
-    next: Next,
-) -> Response {
-    let key = req
-        .headers()
-        .get("x-client-id")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("anonymous")
-        .to_string();
-
-    if !state.allow(&key, 1.0).await {
-        let body = Json(json!({"error": "too_many_requests", "message": "rate limit exceeded"}));
-        return (StatusCode::TOO_MANY_REQUESTS, body).into_response();
-    }
-
-    next.run(req).await
-}
-
-/// Boxed rate limiter middleware that accepts any `RateLimiterBackend` implementation.
-pub async fn rate_limiter_middleware_boxed(
-    state: Arc<dyn RateLimiterBackend>,
-    req: Request<Body>,
-    next: Next,
-) -> Response {
-    let key = req
-        .headers()
-        .get("x-client-id")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("anonymous")
-        .to_string();
-
-    match state.allow(&key).await {
-        Ok(true) => next.run(req).await,
-        Ok(false) => {
-            let body =
-                Json(json!({"error": "too_many_requests", "message": "rate limit exceeded"}));
-            (StatusCode::TOO_MANY_REQUESTS, body).into_response()
-        }
-        Err(_) => {
-            let body =
-                Json(json!({"error": "internal_error", "message": "resilience backend error"}));
-            (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
-        }
-    }
-}
-
-/// Middleware: bulkhead/semaphore-based concurrency limiter.
-pub async fn bulkhead_middleware(state: Arc<Bulkhead>, req: Request<Body>, next: Next) -> Response {
-    state
-        .with_permit(|| async move { next.run(req).await })
-        .await
 }
 
 #[cfg(test)]

@@ -136,6 +136,12 @@ impl From<serde_json::Error> for NovaError {
     }
 }
 
+impl From<nova_discovery::DiscoveryError> for NovaError {
+    fn from(err: nova_discovery::DiscoveryError) -> Self {
+        NovaError::InternalError(err.to_string())
+    }
+}
+
 #[cfg(feature = "database")]
 impl From<sea_orm::DbErr> for NovaError {
     fn from(err: sea_orm::DbErr) -> Self {

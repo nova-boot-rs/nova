@@ -23,11 +23,10 @@ sea-orm = { workspace = true, optional = true }
 
 # Internal Macros
 nova-macros = { path = "../nova-macros" }
-
-# Optional Redis-backed distributed store
-redis = {  workspace = true, optional = true, features = ["aio", "tokio-comp"] }
+nova-discovery = { path = "../nova-discovery" }
+nova-observability = { path = "../nova-observability" }
 
 [features]
 default = []
 database = ["sea-orm"]
-redis-store = ["redis"]
+redis-store = ["nova-discovery/redis-store"]

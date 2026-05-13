@@ -5,8 +5,6 @@ pub use inventory;
 pub use serde::{Deserialize, Serialize};
 
 pub mod config;
-pub mod distributed;
-pub mod observability;
 pub mod resilience;
 pub mod runtime;
 pub mod traits;
@@ -19,11 +17,13 @@ pub use config::{
     EnvConfigSource, JsonFileConfigSource, NovaConfig, NovaConfigBuilder, NovaConfigSource,
     NovaSecretSource,
 };
-pub use distributed::DistributedStore;
+pub use nova_discovery as discovery;
+pub use nova_discovery::DistributedStore;
 #[cfg(feature = "redis-store")]
-pub use distributed::redis_store::RedisStore;
+pub use nova_discovery::redis_store::RedisStore;
 pub use error::{ErrorResponse, NovaError, NovaResult};
-pub use observability::{
+pub use nova_observability as observability;
+pub use nova_observability::{
     NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId, init_tracing,
 };
 pub use resilience::{Bulkhead, CircuitBreaker, RateLimiter, RetryPolicy};

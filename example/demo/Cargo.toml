@@ -7,6 +7,6 @@ version.workspace = true
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 nova-core = { path = "../../crates/nova-core" }
-nova-sql = { path = "../../crates/nova-sql" }
+nova-sql = { path = "../../crates/plugins/nova-sql" }
 sea-orm = { version = "1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 serde_json = "1.0"

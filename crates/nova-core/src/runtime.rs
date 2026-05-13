@@ -1,7 +1,7 @@
-use crate::observability::{init_tracing, request_id_layer};
 use crate::traits::NovaPlugin;
 use axum::routing::MethodRouter;
 use axum::{Router, serve};
+use nova_observability::{init_tracing, request_id_layer};
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;
