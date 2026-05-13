@@ -1,7 +1,9 @@
 use crate::app_state::{AppState, RuntimeConfig};
 use nova_core::{
     ApiResponse, ApiVersion, Deserialize, Json, ListResponse, NovaError, NovaRequest,
-    NovaResponse, NovaResult, PaginatedResponse, PaginationQuery, Serialize, VersionedResponse,
+    NovaResponse, NovaResult, NovaValidate, PaginatedResponse, PaginationQuery, Serialize,
+    ValidationErrors, VersionedResponse, max_length, min_length, required_string,
+    validate_request,
     axum::Extension, axum::extract::Query, axum::http::StatusCode, get, post,
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
@@ -30,6 +32,30 @@ pub struct MessageReceived {
     pub content: String,
 }
 
+impl NovaValidate for MessageReceived {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+
+        if let Some(err) = required_string("content", &self.content) {
+            errors.push(err);
+        }
+
+        if let Some(err) = min_length("content", &self.content, 1) {
+            errors.push(err);
+        }
+
+        if let Some(err) = max_length("content", &self.content, 512) {
+            errors.push(err);
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
 #[derive(Serialize, NovaResponse)]
 pub struct MessageSent {
     pub reply: String,
@@ -56,13 +82,7 @@ pub async fn hello_world() -> Json<ApiResponse<&'static str>> {
 pub async fn echo(
     Json(payload): Json<MessageReceived>,
 ) -> NovaResult<Json<ApiResponse<MessageSent>>> {
-    if payload.content.is_empty() {
-        return Err(NovaError::Custom {
-            status: StatusCode::UNPROCESSABLE_ENTITY,
-            error: "ValidationError".to_string(),
-            message: "Message cannot be empty".to_string(),
-        });
-    }
+    validate_request(&payload)?;
 
     Ok(Json(ApiResponse::with_status(
         StatusCode::OK,

@@ -9,6 +9,7 @@ pub mod openapi;
 pub mod resilience;
 pub mod runtime;
 pub mod traits;
+pub mod validation;
 
 // Error handling and response modules
 pub mod error;
@@ -37,6 +38,9 @@ pub use response::{
 pub use runtime::{NovaApp, NovaRoute};
 pub use traits::{
     NovaLifecycle, NovaModule, NovaPlugin, NovaRequestModel, NovaResponseModel, NovaRouterExtender,
+};
+pub use validation::{
+    NovaValidate, ValidationErrors, max_length, min_length, required_string, validate_request,
 };
 
 extern crate nova_macros;
