@@ -1,0 +1,5 @@
+{
+  "app_label": "Nova Demo",
+  "maintenance_mode": false,
+  "sample_rate": 1.0
+}

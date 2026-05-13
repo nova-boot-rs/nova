@@ -3,6 +3,10 @@ use serde_json::{Map, Value};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
+use tokio::sync::RwLock;
+use tracing::{error, info};
 
 use crate::NovaError;
 use crate::NovaResult;
@@ -24,6 +28,108 @@ impl<T> NovaConfig<T> {
     pub fn into_inner(self) -> T {
         self.inner
     }
+}
+
+#[derive(Clone)]
+pub struct ReloadableConfig<T> {
+    inner: Arc<RwLock<NovaConfig<T>>>,
+}
+
+impl<T> ReloadableConfig<T> {
+    pub fn new(config: NovaConfig<T>) -> Self {
+        Self {
+            inner: Arc::new(RwLock::new(config)),
+        }
+    }
+}
+
+impl<T> ReloadableConfig<T>
+where
+    T: Clone,
+{
+    pub async fn snapshot(&self) -> NovaConfig<T> {
+        self.inner.read().await.clone()
+    }
+
+    pub async fn get(&self) -> T {
+        self.inner.read().await.inner.clone()
+    }
+}
+
+fn build_json_file_config<T>(
+    path: &PathBuf,
+    defaults: &Option<T>,
+    env_prefix: &Option<String>,
+) -> NovaResult<NovaConfig<T>>
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
+    let mut builder = NovaConfigBuilder::new().with_json_file(path.clone());
+
+    if let Some(defaults) = defaults.clone() {
+        builder = builder.defaults(defaults);
+    }
+
+    if let Some(prefix) = env_prefix.as_deref() {
+        builder = builder.with_env_prefix(prefix);
+    }
+
+    builder.build()
+}
+
+/// Start a background poller that reloads JSON config when file mtime changes.
+///
+/// This function must be called from within an active Tokio runtime.
+pub fn spawn_json_file_hot_reloader<T>(
+    path: impl Into<PathBuf>,
+    defaults: Option<T>,
+    env_prefix: Option<String>,
+    poll_interval: Duration,
+) -> NovaResult<ReloadableConfig<T>>
+where
+    T: Serialize + DeserializeOwned + Clone + Send + Sync + 'static,
+{
+    let path = path.into();
+    let initial = build_json_file_config(&path, &defaults, &env_prefix)?;
+    let holder = ReloadableConfig::new(initial);
+    let holder_task = holder.clone();
+    let watched_path = path.clone();
+
+    tokio::spawn(async move {
+        let mut last_modified: Option<SystemTime> = fs::metadata(&watched_path)
+            .ok()
+            .and_then(|meta| meta.modified().ok());
+
+        loop {
+            tokio::time::sleep(poll_interval).await;
+
+            let current_modified = fs::metadata(&watched_path)
+                .ok()
+                .and_then(|meta| meta.modified().ok());
+
+            if current_modified.is_none() || current_modified == last_modified {
+                continue;
+            }
+
+            match build_json_file_config(&watched_path, &defaults, &env_prefix) {
+                Ok(new_config) => {
+                    let mut lock = holder_task.inner.write().await;
+                    *lock = new_config;
+                    last_modified = current_modified;
+                    info!("hot-reloaded config from {}", watched_path.display());
+                }
+                Err(err) => {
+                    error!(
+                        "failed to hot-reload config from {}: {}",
+                        watched_path.display(),
+                        err
+                    );
+                }
+            }
+        }
+    });
+
+    Ok(holder)
 }
 
 pub struct NovaConfigBuilder<T> {

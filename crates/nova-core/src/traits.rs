@@ -6,6 +6,8 @@ pub trait NovaPlugin: Send + Sync {
 
     async fn on_init(&self);
 
+    async fn on_shutdown(&self) {}
+
     fn extend_router(&self, router: Router) -> Router;
 }
 
