@@ -4,7 +4,7 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
-sea-orm = "1.1"
-sea-orm-migration = "1.1"
-sea-query = "0.32"
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
+sea-query.workspace = true
 nova-core = { path = "../nova-core" }

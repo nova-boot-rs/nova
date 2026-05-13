@@ -31,6 +31,8 @@ pub struct NovaApp<S = ()>
 where
     S: Clone + Send + Sync + 'static,
 {
+    name: &'static str,
+    port: u16,
     router: Router<S>,
     address: std::net::SocketAddr,
     state: S,
@@ -50,10 +52,12 @@ impl<S> NovaApp<S>
 where
     S: Clone + Send + Sync + 'static,
 {
-    pub fn new(port: u16, state: S) -> Self {
+    pub fn new(name: &'static str, port: u16, state: S) -> Self {
         let router = Router::<S>::new().layer(TraceLayer::new_for_http()); // Auto-logging for every request!
 
         Self {
+            name,
+            port,
             router,
             address: format!("0.0.0.0:{}", port)
                 .parse()
@@ -92,7 +96,7 @@ where
             final_router = plugin.extend_router(final_router);
         }
 
-        info!("🚀 Nova-Boot starting on {}", self.address);
+        info!("🚀 {{{}}} starting on port {}", self.name, self.port);
         let listener = TcpListener::bind(&self.address).await.unwrap();
 
         serve(listener, final_router)

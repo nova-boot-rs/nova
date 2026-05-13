@@ -7,6 +7,6 @@ version.workspace = true
 proc-macro = true # Crucial: This tells Rust this is a macro crate
 
 [dependencies]
-syn = { version = "2.0", features = ["full"] } # Parses Rust code into a tree
-quote = "1.0"                                  # Turns that tree back into code
-proc-macro2 = "1.0"
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
