@@ -30,4 +30,4 @@ This document turns the feature spec into a staged implementation plan.
 - Dev CLI, test helpers, and container/deployment support.
 
 ## Immediate next step
-Implement layered configuration with typed sources, env overrides, and a secrets abstraction.
+Implement observability: tracing spans, request IDs, structured logging, and metrics hooks.
