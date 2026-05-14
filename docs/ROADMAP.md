@@ -274,3 +274,27 @@ Security      Developer      Delivery &
 | 9. Delivery & Operations | 🔵 PLANNED | 0% |
 
 ---
+
+```text
+crates/
+├── nova-core/                  # Phase 1
+├── nova-macros/                # Phase 3
+├── nova-middleware/            # Phase 4
+├── nova-observability/         # Phase 2-3
+├── nova-resilience-store/      # Phase 4
+├── plugins/
+│   ├── nova-sql/               # Phase 4
+│   ├── nova-nosql/             # Phase 4
+│   ├── nova-graphdb/           # Phase 4
+│   └── nova-messaging/         # Phase 4
+├── discovery/
+│   ├── nova-discovery/         # Phase 5 (trait)
+│   ├── nova-discovery-consul/  # Phase 5
+│   ├── nova-discovery-etcd/    # Phase 5
+│   └── nova-discovery-dns/     # Phase 5
+├── nova-client/                # Phase 5
+├── nova-gateway/               # Phase 6
+├── nova-auth/                  # Phase 7
+├── nova-cli/                   # Phase 8
+└── nova-test/                  # Phase 8
+```

@@ -1,0 +1,6 @@
+[package]
+name = "nova-discovery-etcd"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]

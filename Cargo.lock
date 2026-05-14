@@ -1339,7 +1339,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-auth"
+version = "0.1.0"
+
+[[package]]
 name = "nova-cli"
+version = "0.1.0"
+
+[[package]]
+name = "nova-client"
 version = "0.1.0"
 
 [[package]]
@@ -1363,6 +1371,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-discovery"
+version = "0.1.0"
+
+[[package]]
+name = "nova-discovery-consul"
+version = "0.1.0"
+
+[[package]]
+name = "nova-discovery-dns"
+version = "0.1.0"
+
+[[package]]
+name = "nova-discovery-etcd"
+version = "0.1.0"
+
+[[package]]
+name = "nova-gateway"
+version = "0.1.0"
+
+[[package]]
 name = "nova-graphdb"
 version = "0.1.0"
 
@@ -1374,6 +1402,10 @@ dependencies = [
  "quote",
  "syn 2.0.117",
 ]
+
+[[package]]
+name = "nova-messaging"
+version = "0.1.0"
 
 [[package]]
 name = "nova-middleware"
@@ -1423,6 +1455,10 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
+
+[[package]]
+name = "nova-test"
+version = "0.1.0"
 
 [[package]]
 name = "nu-ansi-term"

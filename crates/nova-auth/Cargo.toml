@@ -1,0 +1,6 @@
+[package]
+name = "nova-auth"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]

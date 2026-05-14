@@ -1,0 +1,6 @@
+[package]
+name = "nova-discovery-consul"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
