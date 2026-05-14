@@ -4,10 +4,10 @@ use axum::extract::Extension;
 use axum::routing::MethodRouter;
 use axum::routing::get;
 use axum::{Router, serve};
-use nova_observability::{build_openapi_document, init_tracing, request_id_layer};
+use nova_observability::{build_openapi_document, init_tracing};
 use serde_json::json;
+use std::collections::HashMap;
 use tokio::net::TcpListener;
-use tower_http::trace::TraceLayer;
 use tracing::info;
 
 async fn framework_health() -> Json<serde_json::Value> {
@@ -62,10 +62,12 @@ where
 pub struct NovaRoute {
     pub path: &'static str,
     pub method: &'static str,
-    pub handler: fn() -> MethodRouter<()>,
+    pub handler: fn() -> MethodRouter<()>, // Keep () — converts to S via Into
 }
 
 inventory::collect!(NovaRoute);
+
+type RouteRegistry = HashMap<(&'static str, &'static str), fn() -> MethodRouter<()>>;
 
 impl<S> NovaApp<S>
 where
@@ -74,9 +76,7 @@ where
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
         let router = Router::<S>::new()
             .route("/health", get(framework_health))
-            .route("/openapi.json", get(openapi_json))
-            .layer(request_id_layer())
-            .layer(TraceLayer::new_for_http());
+            .route("/openapi.json", get(openapi_json));
 
         Self {
             name,
@@ -101,40 +101,42 @@ where
             plugin.on_init().await;
         }
 
+        // Start with framework routes + state
         let mut app_router = self.router.with_state(self.state.clone());
 
-        // for route in inventory::iter::<NovaRoute> {
-        //     info!("📡 Registering {} route: {}", route.method, route.path);
-        //     let method_router = (route.handler)();
-        //     app_router = app_router.route(route.path, method_router);
-        // }
-        use std::collections::HashSet;
-        let mut registered = HashSet::new();
+        // Collect and deduplicate inventory routes
+        let mut route_map: RouteRegistry = HashMap::new();
 
         for route in inventory::iter::<NovaRoute> {
             let key = (route.method, route.path);
-            info!("📡 Registering {} route: {}", route.method, route.path);
-            if !registered.insert(key) {
-                panic!("Duplicate route detected: {} {}", route.method, route.path);
+            if route_map.insert(key, route.handler).is_some() {
+                tracing::warn!(
+                    "Duplicate route detected, overriding: {} {}",
+                    route.method,
+                    route.path
+                );
             }
-
-            let method_router = (route.handler)();
-            app_router = app_router.route(route.path, method_router);
         }
 
-        let mut final_router =
-            app_router
-                .layer(axum::Extension(self.state.clone()))
-                .layer(axum::Extension(OpenApiMeta {
-                    service_name: self.name.to_string(),
-                }));
+        for ((method, path), handler) in route_map.into_iter() {
+            info!("📡 Registering {} route: {}", method, path);
+            let method_router: MethodRouter<()> = (handler)();
+            // MethodRouter<()> → MethodRouter<S> via Into
+            app_router = app_router.route(path, method_router);
+        }
 
+        // Add OpenAPI metadata as Extension (separate from app state)
+        let mut final_router = app_router.layer(axum::Extension(OpenApiMeta {
+            service_name: self.name.to_string(),
+        }));
+
+        // Let plugins extend the router
         for plugin in &self.plugins {
             info!("🔌 Injecting state for: {}", plugin.name());
             final_router = plugin.extend_router(final_router);
         }
 
-        info!("🚀 {{{}}} starting on port {}", self.name, self.port);
+        info!("🚀 {} starting on port {}", self.name, self.port);
         let listener = TcpListener::bind(&self.address)
             .await
             .expect("Failed to bind server socket");
@@ -144,7 +146,7 @@ where
             .await
             .expect("Server failed to start");
 
-        info!("🛑 {{{}}} shutting down", self.name);
+        info!("🛑 {} shutting down", self.name);
         for plugin in self.plugins.iter().rev() {
             info!("🔌 Stopping plugin: {}", plugin.name());
             plugin.on_shutdown().await;
