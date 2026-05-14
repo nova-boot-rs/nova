@@ -9,6 +9,10 @@ use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
+pub mod openapi;
+
+pub use openapi::{OpenApiHook, build_openapi_document};
+
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 static TRACING_INIT: Once = Once::new();
 

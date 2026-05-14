@@ -1,23 +1,17 @@
-use crate::openapi::build_openapi_document;
-use crate::response::ApiResponse;
 use crate::traits::NovaPlugin;
 use axum::Json;
 use axum::extract::Extension;
-use axum::http::StatusCode;
 use axum::routing::MethodRouter;
 use axum::routing::get;
 use axum::{Router, serve};
-use nova_observability::{init_tracing, request_id_layer};
+use nova_observability::{build_openapi_document, init_tracing, request_id_layer};
 use serde_json::json;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 
-async fn framework_health() -> Json<ApiResponse<serde_json::Value>> {
-    Json(ApiResponse::with_status(
-        StatusCode::OK,
-        json!({"status": "healthy", "service": "nova"}),
-    ))
+async fn framework_health() -> Json<serde_json::Value> {
+    Json(json!({"status": "healthy", "service": "nova"}))
 }
 
 #[derive(Clone)]

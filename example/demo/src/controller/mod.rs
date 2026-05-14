@@ -1,9 +1,13 @@
 use crate::app_state::{AppState, RuntimeConfig};
 use nova_core::{
-    ApiResponse, ApiVersion, Deserialize, Json, ListResponse, NovaError, NovaRequest, NovaResponse,
-    NovaResult, NovaValidate, PaginatedResponse, PaginationQuery, Serialize, ValidationErrors,
-    VersionedResponse, axum::Extension, axum::extract::Query, axum::http::StatusCode, get,
-    max_length, min_length, post, required_string, validate_request,
+    Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, Serialize,
+    axum::Extension, axum::extract::Query, axum::http::StatusCode, get, post,
+};
+use nova_middleware::{
+    ApiResponse, ApiVersion, ListResponse, PaginatedResponse, PaginationQuery, VersionedResponse,
+};
+use nova_middleware::{
+    NovaValidate, ValidationErrors, max_length, min_length, required_string, validate_request,
 };
 use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 
@@ -19,7 +23,7 @@ fn demo_openapi_fragment() -> serde_json::Value {
 }
 
 nova_core::inventory::submit! {
-    nova_core::OpenApiHook {
+    nova_observability::OpenApiHook {
         name: "demo-tag-fragment",
         provider: demo_openapi_fragment,
     }

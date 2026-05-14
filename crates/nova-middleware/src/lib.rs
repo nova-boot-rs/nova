@@ -1,13 +1,28 @@
+pub mod resilience;
+pub mod response;
+pub mod validation;
+
 use nova_core::Json;
 use nova_core::axum::body::Body;
 use nova_core::axum::http::Request;
 use nova_core::axum::http::StatusCode;
 use nova_core::axum::middleware::Next;
 use nova_core::axum::response::{IntoResponse, Response};
-use nova_core::resilience::{CircuitBreakerBackend, RateLimiterBackend};
-use nova_core::{Bulkhead, CircuitBreaker, RateLimiter};
 use serde_json::json;
 use std::sync::Arc;
+
+// Re-export commonly used middleware items
+pub use resilience::{
+    Bulkhead, CircuitBreaker, CircuitBreakerBackend, DistributedCircuitBreaker,
+    DistributedRateLimiter, RateLimiter, RateLimiterBackend, RetryPolicy,
+};
+pub use response::{
+    ApiResponse, ApiVersion, EmptyResponse, ListResponse, PaginatedResponse, PaginationQuery,
+    VersionedResponse,
+};
+pub use validation::{
+    NovaValidate, ValidationErrors, max_length, min_length, required_string, validate_request,
+};
 
 /// Rejects requests when the in-memory circuit is open.
 pub async fn circuit_breaker_middleware(

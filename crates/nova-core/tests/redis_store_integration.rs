@@ -1,6 +1,6 @@
 #![cfg(feature = "redis-store")]
 
-use nova_core::{DistributedStore, RedisStore};
+use nova_resilience_store::{RedisStore, ResilienceStore};
 use std::env;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 async fn redis_store_basic_flow() {
     let url = env::var("NOVA_TEST_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".into());
     let backend = RedisStore::new(&url).expect("create redis store");
-    let store: Arc<dyn DistributedStore> = Arc::new(backend);
+    let store: Arc<dyn ResilienceStore> = Arc::new(backend);
 
     let now_nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -1,4 +1,4 @@
-use crate::{NovaError, NovaResult};
+use nova_core::{NovaError, NovaResult};
 
 #[derive(Debug, Clone, Default)]
 pub struct ValidationErrors {

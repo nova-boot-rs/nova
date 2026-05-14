@@ -1,4 +1,4 @@
-use crate::runtime::NovaRoute;
+use inventory;
 use serde_json::{Map, Value, json};
 
 pub struct OpenApiHook {
@@ -26,32 +26,6 @@ fn merge_json(base: &mut Value, overlay: Value) {
     }
 }
 
-fn default_paths_from_routes() -> Map<String, Value> {
-    let mut paths = Map::new();
-
-    for route in inventory::iter::<NovaRoute> {
-        let method = route.method.to_lowercase();
-        let operation = json!({
-            "operationId": format!("{}_{}", method, route.path.replace('/', "_").trim_matches('_')),
-            "responses": {
-                "200": {
-                    "description": "Successful response"
-                }
-            }
-        });
-
-        let entry = paths
-            .entry(route.path.to_string())
-            .or_insert_with(|| Value::Object(Map::new()));
-
-        if let Value::Object(path_item) = entry {
-            path_item.insert(method, operation);
-        }
-    }
-
-    paths
-}
-
 pub fn build_openapi_document(service_name: &str) -> Value {
     let mut doc = json!({
         "openapi": "3.1.0",
@@ -59,7 +33,7 @@ pub fn build_openapi_document(service_name: &str) -> Value {
             "title": format!("{service_name} API"),
             "version": "0.1.0"
         },
-        "paths": Value::Object(default_paths_from_routes())
+        "paths": Value::Object(Map::new())
     });
 
     for hook in inventory::iter::<OpenApiHook> {

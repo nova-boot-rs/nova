@@ -1,5 +1,8 @@
-use crate::config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend};
 use async_trait::async_trait;
+use nova_core::{
+    NovaError,
+    config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend},
+};
 use nova_resilience_store::ResilienceStore;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -48,7 +51,7 @@ impl DistributedCircuitBreaker {
         format!("cb:open:{}", self.name)
     }
 
-    pub async fn allow(&self) -> Result<bool, crate::NovaError> {
+    pub async fn allow(&self) -> Result<bool, NovaError> {
         if let Some(v) = self.store.get_i64(&self.open_key()).await?
             && v > 0
         {
@@ -57,7 +60,7 @@ impl DistributedCircuitBreaker {
         Ok(true)
     }
 
-    pub async fn record_failure(&self) -> Result<(), crate::NovaError> {
+    pub async fn record_failure(&self) -> Result<(), NovaError> {
         let f = self.store.incr(&self.failures_key()).await? as u32;
         if f >= self.threshold {
             // open the breaker for TTL seconds
@@ -70,7 +73,7 @@ impl DistributedCircuitBreaker {
         Ok(())
     }
 
-    pub async fn record_success(&self) -> Result<(), crate::NovaError> {
+    pub async fn record_success(&self) -> Result<(), NovaError> {
         // clear counters and open flag
         self.store.del(&self.failures_key()).await?;
         self.store.del(&self.open_key()).await?;
@@ -107,7 +110,7 @@ impl DistributedRateLimiter {
     }
 
     /// Attempt to consume a single token for `client`.
-    pub async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> {
+    pub async fn allow(&self, client: &str) -> Result<bool, NovaError> {
         let key = self.key_for(client);
         let v = self.store.incr(&key).await?;
         if v == 1 {
@@ -121,21 +124,21 @@ impl DistributedRateLimiter {
 /// Trait abstraction for circuit breaker backends (in-memory or distributed).
 #[async_trait]
 pub trait CircuitBreakerBackend: Send + Sync + 'static {
-    async fn allow(&self) -> Result<bool, crate::NovaError>;
-    async fn record_failure(&self) -> Result<(), crate::NovaError>;
-    async fn record_success(&self) -> Result<(), crate::NovaError>;
+    async fn allow(&self) -> Result<bool, NovaError>;
+    async fn record_failure(&self) -> Result<(), NovaError>;
+    async fn record_success(&self) -> Result<(), NovaError>;
 }
 
 #[async_trait]
 impl CircuitBreakerBackend for CircuitBreaker {
-    async fn allow(&self) -> Result<bool, crate::NovaError> {
+    async fn allow(&self) -> Result<bool, NovaError> {
         Ok(self.allow().await)
     }
-    async fn record_failure(&self) -> Result<(), crate::NovaError> {
+    async fn record_failure(&self) -> Result<(), NovaError> {
         self.record_failure().await;
         Ok(())
     }
-    async fn record_success(&self) -> Result<(), crate::NovaError> {
+    async fn record_success(&self) -> Result<(), NovaError> {
         self.record_success().await;
         Ok(())
     }
@@ -143,13 +146,13 @@ impl CircuitBreakerBackend for CircuitBreaker {
 
 #[async_trait]
 impl CircuitBreakerBackend for DistributedCircuitBreaker {
-    async fn allow(&self) -> Result<bool, crate::NovaError> {
+    async fn allow(&self) -> Result<bool, NovaError> {
         self.allow().await
     }
-    async fn record_failure(&self) -> Result<(), crate::NovaError> {
+    async fn record_failure(&self) -> Result<(), NovaError> {
         self.record_failure().await
     }
-    async fn record_success(&self) -> Result<(), crate::NovaError> {
+    async fn record_success(&self) -> Result<(), NovaError> {
         self.record_success().await
     }
 }
@@ -157,19 +160,19 @@ impl CircuitBreakerBackend for DistributedCircuitBreaker {
 /// Trait abstraction for rate limiter backends.
 #[async_trait]
 pub trait RateLimiterBackend: Send + Sync + 'static {
-    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError>;
+    async fn allow(&self, client: &str) -> Result<bool, NovaError>;
 }
 
 #[async_trait]
 impl RateLimiterBackend for RateLimiter {
-    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> {
+    async fn allow(&self, client: &str) -> Result<bool, NovaError> {
         Ok(self.allow(client, 1.0).await)
     }
 }
 
 #[async_trait]
 impl RateLimiterBackend for DistributedRateLimiter {
-    async fn allow(&self, client: &str) -> Result<bool, crate::NovaError> {
+    async fn allow(&self, client: &str) -> Result<bool, NovaError> {
         self.allow(client).await
     }
 }

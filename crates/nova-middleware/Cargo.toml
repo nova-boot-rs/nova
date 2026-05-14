@@ -5,4 +5,9 @@ version.workspace = true
 
 [dependencies]
 nova-core = { path = "../nova-core" }
+nova-resilience-store = { path = "../nova-resilience-store" }
 serde_json.workspace = true
+axum.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+serde.workspace = true
