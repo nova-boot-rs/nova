@@ -1,6 +1,6 @@
 use crate::config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend};
 use async_trait::async_trait;
-use nova_discovery::DistributedStore;
+use nova_resilience_store::ResilienceStore;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -20,7 +20,7 @@ pub struct CircuitBreaker {
 /// Circuit breaker that stores state in a distributed store (Redis, etc.)
 #[derive(Clone)]
 pub struct DistributedCircuitBreaker {
-    store: Arc<dyn DistributedStore>,
+    store: Arc<dyn ResilienceStore>,
     name: String,
     threshold: u32,
     open_ttl_seconds: usize,
@@ -28,7 +28,7 @@ pub struct DistributedCircuitBreaker {
 
 impl DistributedCircuitBreaker {
     pub fn new(
-        store: Arc<dyn DistributedStore>,
+        store: Arc<dyn ResilienceStore>,
         name: impl Into<String>,
         threshold: u32,
         open_ttl_seconds: usize,
@@ -81,7 +81,7 @@ impl DistributedCircuitBreaker {
 /// Distributed rate limiter using fixed window counters in the store.
 #[derive(Clone)]
 pub struct DistributedRateLimiter {
-    store: Arc<dyn DistributedStore>,
+    store: Arc<dyn ResilienceStore>,
     prefix: String,
     capacity: i64,
     window_seconds: usize,
@@ -89,7 +89,7 @@ pub struct DistributedRateLimiter {
 
 impl DistributedRateLimiter {
     pub fn new(
-        store: Arc<dyn DistributedStore>,
+        store: Arc<dyn ResilienceStore>,
         prefix: impl Into<String>,
         capacity: i64,
         window_seconds: usize,
@@ -178,7 +178,7 @@ impl RateLimiterBackend for DistributedRateLimiter {
 pub fn build_circuit_breaker_backend(
     name: &str,
     cfg: &CircuitBreakerConfig,
-    store_opt: Option<Arc<dyn DistributedStore>>,
+    store_opt: Option<Arc<dyn ResilienceStore>>,
 ) -> Arc<dyn CircuitBreakerBackend> {
     match &cfg.backend {
         ResilienceBackend::Local => Arc::new(CircuitBreaker::new(
@@ -208,7 +208,7 @@ pub fn build_circuit_breaker_backend(
 pub fn build_rate_limiter_backend(
     prefix: &str,
     cfg: &RateLimiterConfig,
-    store_opt: Option<Arc<dyn DistributedStore>>,
+    store_opt: Option<Arc<dyn ResilienceStore>>,
 ) -> Arc<dyn RateLimiterBackend> {
     match &cfg.backend {
         ResilienceBackend::Local => Arc::new(RateLimiter::new(

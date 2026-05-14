@@ -1347,9 +1347,9 @@ dependencies = [
  "async-trait",
  "axum",
  "inventory",
- "nova-discovery",
  "nova-macros",
  "nova-observability",
+ "nova-resilience-store",
  "sea-orm",
  "serde",
  "serde_json",
@@ -1358,14 +1358,6 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "nova-discovery"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "redis",
 ]
 
 [[package]]
@@ -1401,6 +1393,14 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "nova-resilience-store"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "redis",
 ]
 
 [[package]]

@@ -2,7 +2,7 @@
 members = [
     "crates/nova-cli",
     "crates/nova-core",
-    "crates/nova-discovery",
+    "crates/nova-resilience-store",
     "crates/nova-macros",
     "crates/nova-middleware",
     "crates/nova-observability",

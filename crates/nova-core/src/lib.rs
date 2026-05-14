@@ -20,10 +20,10 @@ pub use config::{
     NovaSecretSource, ReloadableConfig, spawn_json_file_hot_reloader,
 };
 pub use error::{ErrorResponse, NovaError, NovaResult};
-pub use nova_discovery as discovery;
-pub use nova_discovery::DistributedStore;
+pub use nova_resilience_store as discovery;
+pub use nova_resilience_store::ResilienceStore;
 #[cfg(feature = "redis-store")]
-pub use nova_discovery::redis_store::RedisStore;
+pub use nova_resilience_store::redis_store::RedisStore;
 pub use nova_observability as observability;
 pub use nova_observability::{
     NovaMetricsRecorder, ObservabilityConfig, RequestContext, RequestId, init_tracing,

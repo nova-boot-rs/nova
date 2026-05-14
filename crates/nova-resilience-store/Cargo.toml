@@ -1,5 +1,5 @@
 [package]
-name = "nova-discovery"
+name = "nova-resilience-store"
 edition.workspace = true
 version.workspace = true
 

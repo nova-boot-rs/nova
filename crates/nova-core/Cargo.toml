@@ -23,10 +23,10 @@ sea-orm = { workspace = true, optional = true }
 
 # Internal Macros
 nova-macros = { path = "../nova-macros" }
-nova-discovery = { path = "../nova-discovery" }
+nova-resilience-store = { path = "../nova-resilience-store" }
 nova-observability = { path = "../nova-observability" }
 
 [features]
 default = []
 database = ["sea-orm"]
-redis-store = ["nova-discovery/redis-store"]
+redis-store = ["nova-resilience-store/redis-store"]
