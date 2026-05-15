@@ -31,20 +31,11 @@ pub struct NovaSql {
 }
 
 /// Optional pool configuration passed to `connect_with_options`.
+#[derive(Default)]
 pub struct PoolOptions {
     pub max_connections: Option<u32>,
     pub min_connections: Option<u32>,
     pub connect_timeout_secs: Option<u64>,
-}
-
-impl Default for PoolOptions {
-    fn default() -> Self {
-        Self {
-            max_connections: None,
-            min_connections: None,
-            connect_timeout_secs: None,
-        }
-    }
 }
 
 #[async_trait]
@@ -106,13 +97,10 @@ impl QueryCacheStore for InMemoryQueryCache {
 impl QueryCacheStore for RedisQueryCache {
     async fn get(&self, key: &str) -> Option<String> {
         let mut conn = self.manager.lock().await;
-        match redis::Cmd::get(key)
+        redis::Cmd::get(key)
             .query_async::<_, Option<String>>(&mut *conn)
             .await
-        {
-            Ok(opt) => opt,
-            Err(_) => None,
-        }
+            .unwrap_or_default()
     }
 
     async fn set(&self, key: &str, value: String, ttl: Duration) {
@@ -169,7 +157,7 @@ impl NovaSql {
     pub async fn register_replicas_from_urls(&self, urls: &[String]) -> usize {
         let mut added = 0usize;
         for url in urls {
-            if let Ok(_) = self.add_replica_url(url).await {
+            if self.add_replica_url(url).await.is_ok() {
                 added += 1;
             }
         }
