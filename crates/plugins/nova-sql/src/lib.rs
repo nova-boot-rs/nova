@@ -13,19 +13,26 @@ use std::sync::{
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, RwLock};
 
-/// Type alias for database sync task closures
-type SyncTask = Box<
-    dyn for<'a> Fn(
-            &'a NovaSql,
-        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>
-        + Send
-        + Sync,
->;
+#[async_trait]
+trait SyncTask: Send + Sync {
+    async fn run(&self, sql: &NovaSql);
+}
+
+struct EntitySyncTask<E: EntityTrait> {
+    _marker: std::marker::PhantomData<E>,
+}
+
+#[async_trait]
+impl<E: EntityTrait + 'static> SyncTask for EntitySyncTask<E> {
+    async fn run(&self, sql: &NovaSql) {
+        sql.sync_entity::<E>().await;
+    }
+}
 
 pub struct NovaSql {
     pub db: DatabaseConnection,
     pub allow_drop: bool,
-    sync_tasks: Vec<SyncTask>,
+    sync_tasks: Vec<Box<dyn SyncTask>>,
     cache_store: Option<Arc<dyn QueryCacheStore>>,
     replicas: Arc<RwLock<Vec<DatabaseConnection>>>,
 }
@@ -212,12 +219,10 @@ impl NovaSql {
         }
     }
 
-    pub fn add_entity<E>(mut self) -> Self
-    where
-        E: EntityTrait + 'static,
-    {
-        self.sync_tasks
-            .push(Box::new(|sql| Box::pin(sql.sync_entity::<E>())));
+    pub fn add_entity<E: EntityTrait + 'static>(mut self) -> Self {
+        self.sync_tasks.push(Box::new(EntitySyncTask::<E> {
+            _marker: std::marker::PhantomData,
+        }));
         self
     }
 
@@ -410,11 +415,11 @@ impl NovaPlugin for NovaSql {
     async fn on_init(&self) {
         println!("🗄️ Initializing SQL Plugin...");
         for task in &self.sync_tasks {
-            task(self).await;
+            task.run(self).await;
         }
     }
 
-    fn extend_router(&self, router: Router) -> Router {
+    fn extend_router(&self, router: Router<()>) -> Router<()> {
         // Inject a ReadWritePool extension for handlers to use read/write splitting.
         let pool = self.read_write_pool();
         router.layer(Extension(pool))

@@ -249,15 +249,6 @@ pub async fn check_db(
     Json(ApiResponse::with_status(StatusCode::OK, status))
 }
 
-/// Health check endpoint
-#[get("/health")]
-pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
-    Json(ApiResponse::with_status(
-        StatusCode::OK,
-        serde_json::json!({"status": "healthy"}),
-    ))
-}
-
 /// Returns the current runtime config loaded by the hot reloader.
 #[get("/runtime-config")]
 pub async fn runtime_config(

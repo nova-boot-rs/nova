@@ -51,11 +51,12 @@ Make services robust against failure and connect to storage.
 - [DONE] Bulkhead (connection isolation)
 - [DONE] Rate limiting: token bucket, sliding window
 
-### SQL Plugin (IN PROGRESS)
-- [IN PROGRESS] SeaORM integration with connection pooling
-- [IN PROGRESS] Migration runner
-- [IN PROGRESS] Read/write splitting
-- [IN PROGRESS] Cache hooks (Redis-backed query caching)
+### SQL Plugin (DONE)
+- [DONE] SeaORM integration with connection pooling
+- [DONE] Migration runner
+- [DONE] Read/write splitting (primary + round-robin replicas)
+- [DONE] Cache hooks (Redis-backed query caching) with integration tests
+- [DONE] Example handlers demonstrating `ReadWritePool` usage
 - [PLANNED] Multi-tenancy column resolver
 
 ### NoSQL Plugin (PLANNED)
@@ -266,7 +267,7 @@ Security      Developer      Delivery &
 | 1. Core Foundation | ✅ DONE | 100% |
 | 2. Platform Basics | ✅ DONE | 100% |
 | 3. API Ergonomics | ✅ DONE | 100% |
-| 4. Resilience & Data | 🔄 IN PROGRESS | ~60% |
+| 4. Resilience & Data | 🔄 IN PROGRESS | ~85% |
 | 5. Service Discovery | 🔵 PLANNED | 0% |
 | 6. API Gateway | 🔵 PLANNED | 0% |
 | 7. Security | 🔵 PLANNED | 0% |
