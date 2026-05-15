@@ -13,6 +13,8 @@ pub mod openapi;
 
 pub use openapi::{OpenApiHook, build_openapi_document};
 
+mod plugin;
+pub use plugin::ObservabilityPlugin;
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 static TRACING_INIT: Once = Once::new();
 

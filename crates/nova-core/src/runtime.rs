@@ -1,10 +1,9 @@
 use crate::traits::NovaPlugin;
 use axum::Json;
-use axum::extract::Extension;
 use axum::routing::MethodRouter;
 use axum::routing::get;
 use axum::{Router, serve};
-use nova_observability::{build_openapi_document, init_tracing};
+// Tracing and OpenAPI are provided by optional plugins (observability).
 use serde_json::json;
 use std::collections::HashMap;
 use tokio::net::TcpListener;
@@ -12,15 +11,6 @@ use tracing::info;
 
 async fn framework_health() -> Json<serde_json::Value> {
     Json(json!({"status": "healthy", "service": "nova"}))
-}
-
-#[derive(Clone)]
-struct OpenApiMeta {
-    service_name: String,
-}
-
-async fn openapi_json(Extension(meta): Extension<OpenApiMeta>) -> Json<serde_json::Value> {
-    Json(build_openapi_document(&meta.service_name))
 }
 
 async fn shutdown_signal() {
@@ -74,9 +64,7 @@ where
     S: Clone + Send + Sync + 'static,
 {
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
-        let router = Router::<S>::new()
-            .route("/health", get(framework_health))
-            .route("/openapi.json", get(openapi_json));
+        let router = Router::<S>::new().route("/health", get(framework_health));
 
         Self {
             name,
@@ -94,8 +82,6 @@ where
     }
 
     pub async fn run(self) {
-        init_tracing(self.name);
-
         for plugin in &self.plugins {
             info!("🔌 Loading plugin: {}", plugin.name());
             plugin.on_init().await;
@@ -125,10 +111,8 @@ where
             app_router = app_router.route(path, method_router);
         }
 
-        // Add OpenAPI metadata as Extension (separate from app state)
-        let mut final_router = app_router.layer(axum::Extension(OpenApiMeta {
-            service_name: self.name.to_string(),
-        }));
+        // Plugins are responsible for adding tracing, OpenAPI, and other layers.
+        let mut final_router = app_router;
 
         // Let plugins extend the router
         for plugin in &self.plugins {

@@ -24,7 +24,6 @@ sea-orm = { workspace = true, optional = true }
 # Internal Macros
 nova-macros = { path = "../nova-macros" }
 nova-resilience-store = { path = "../nova-resilience-store" }
-nova-observability = { path = "../nova-observability" }
 
 [features]
 default = []

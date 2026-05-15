@@ -1358,7 +1358,6 @@ dependencies = [
  "axum",
  "inventory",
  "nova-macros",
- "nova-observability",
  "nova-resilience-store",
  "sea-orm",
  "serde",
@@ -1430,6 +1429,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "inventory",
+ "nova-core",
  "serde_json",
  "tower-http",
  "tracing",
