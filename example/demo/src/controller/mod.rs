@@ -3,13 +3,15 @@ use nova_core::{
     Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, Serialize,
     axum::Extension, axum::extract::Query, axum::http::StatusCode, get, post,
 };
+
 use nova_middleware::{
     ApiResponse, ApiVersion, ListResponse, PaginatedResponse, PaginationQuery, VersionedResponse,
 };
 use nova_middleware::{
     NovaValidate, ValidationErrors, max_length, min_length, required_string, validate_request,
 };
-use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
+
+use sea_orm::{ConnectionTrait, Statement};
 
 fn demo_openapi_fragment() -> serde_json::Value {
     serde_json::json!({
@@ -71,6 +73,36 @@ pub struct UserResponse {
     pub email: String,
 }
 
+#[derive(Deserialize, NovaRequest)]
+pub struct CreateUser {
+    pub username: String,
+    pub email: String,
+}
+
+impl NovaValidate for CreateUser {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+
+        if let Some(err) = required_string("username", &self.username) {
+            errors.push(err);
+        }
+
+        if let Some(err) = required_string("email", &self.email) {
+            errors.push(err);
+        }
+
+        if let Some(err) = max_length("username", &self.username, 64) {
+            errors.push(err);
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
 /// Health check endpoint
 #[get("/hello")]
 pub async fn hello_world() -> Json<ApiResponse<&'static str>> {
@@ -98,8 +130,9 @@ pub async fn echo(
 /// Get all users with error handling and structured response
 #[get("/users")]
 pub async fn get_users(
-    Extension(db): Extension<DatabaseConnection>,
+    Extension(pool): Extension<nova_sql::ReadWritePool>,
 ) -> NovaResult<Json<ApiResponse<ListResponse<UserResponse>>>> {
+    let db = pool.read().await;
     let rows: Vec<sea_orm::QueryResult> = db
         .query_all(Statement::from_sql_and_values(
             sea_orm::DatabaseBackend::Sqlite,
@@ -142,8 +175,9 @@ pub async fn get_users(
 #[get("/users-paged")]
 pub async fn get_users_paged(
     Query(pagination): Query<PaginationQuery>,
-    Extension(db): Extension<DatabaseConnection>,
+    Extension(pool): Extension<nova_sql::ReadWritePool>,
 ) -> NovaResult<Json<ApiResponse<PaginatedResponse<UserResponse>>>> {
+    let db = pool.read().await;
     let rows: Vec<sea_orm::QueryResult> = db
         .query_all(Statement::from_sql_and_values(
             sea_orm::DatabaseBackend::Sqlite,
@@ -204,8 +238,9 @@ pub async fn versioned_hello(
 /// Check database connection status
 #[get("/db-status")]
 pub async fn check_db(
-    Extension(db): Extension<DatabaseConnection>,
+    Extension(pool): Extension<nova_sql::ReadWritePool>,
 ) -> Json<ApiResponse<serde_json::Value>> {
+    let db = pool.read().await;
     let backend = db.get_database_backend();
     let status = serde_json::json!({
         "connected": true,
@@ -214,14 +249,14 @@ pub async fn check_db(
     Json(ApiResponse::with_status(StatusCode::OK, status))
 }
 
-// /// Health check endpoint
-// #[get("/health")]
-// pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
-//     Json(ApiResponse::with_status(
-//         StatusCode::OK,
-//         serde_json::json!({"status": "healthy"}),
-//     ))
-// }
+/// Health check endpoint
+#[get("/health")]
+pub async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
+    Json(ApiResponse::with_status(
+        StatusCode::OK,
+        serde_json::json!({"status": "healthy"}),
+    ))
+}
 
 /// Returns the current runtime config loaded by the hot reloader.
 #[get("/runtime-config")]
@@ -230,4 +265,58 @@ pub async fn runtime_config(
 ) -> Json<ApiResponse<RuntimeConfig>> {
     let current = state.runtime_config.get().await;
     Json(ApiResponse::with_status(StatusCode::OK, current))
+}
+
+#[post("/users")]
+pub async fn create_user(
+    Extension(_pool): Extension<nova_sql::ReadWritePool>,
+    Json(payload): Json<CreateUser>,
+) -> NovaResult<Json<ApiResponse<UserResponse>>> {
+    validate_request(&payload)?;
+
+    // Perform a write against the primary database using raw SQL to avoid
+    // needing ActiveModel/Entity trait bounds in this example.
+    let db = _pool.write();
+
+    let insert = Statement::from_sql_and_values(
+        sea_orm::DatabaseBackend::Sqlite,
+        "INSERT INTO users (username, email) VALUES (?, ?)",
+        vec![
+            payload.username.clone().into(),
+            payload.email.clone().into(),
+        ],
+    );
+
+    db.execute(insert)
+        .await
+        .map_err(|e| NovaError::DatabaseError(e.to_string()))?;
+
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Sqlite,
+            "SELECT id, username, email FROM users WHERE rowid = last_insert_rowid()",
+            vec![],
+        ))
+        .await
+        .map_err(|e| NovaError::DatabaseError(e.to_string()))?
+        .ok_or_else(|| NovaError::DatabaseError("Inserted row not found".to_string()))?;
+
+    let id: i32 = row
+        .try_get_by_index(0)
+        .map_err(|e| NovaError::DatabaseError(format!("Failed to parse ID: {}", e)))?;
+    let username: String = row
+        .try_get_by_index(1)
+        .map_err(|e| NovaError::DatabaseError(format!("Failed to parse username: {}", e)))?;
+    let email: String = row
+        .try_get_by_index(2)
+        .map_err(|e| NovaError::DatabaseError(format!("Failed to parse email: {}", e)))?;
+
+    Ok(Json(ApiResponse::with_status(
+        StatusCode::CREATED,
+        UserResponse {
+            id,
+            username,
+            email,
+        },
+    )))
 }

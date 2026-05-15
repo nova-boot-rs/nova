@@ -5,6 +5,7 @@ pub struct RuntimeConfig {
     pub app_label: String,
     pub maintenance_mode: bool,
     pub sample_rate: f64,
+    pub replicas: Vec<String>,
 }
 
 impl Default for RuntimeConfig {
@@ -13,6 +14,7 @@ impl Default for RuntimeConfig {
             app_label: "Nova Demo".to_string(),
             maintenance_mode: false,
             sample_rate: 1.0,
+            replicas: Vec::new(),
         }
     }
 }

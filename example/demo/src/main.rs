@@ -26,6 +26,15 @@ async fn main() {
     let sql_plugin = NovaSql::connect("sqlite:people.db?mode=rwc", true)
         .await
         .add_entity::<entity::user::Entity>();
+    // Register replicas from runtime config if provided
+    let config = app_state.runtime_config.get().await;
+    if !config.replicas.is_empty() {
+        for url in config.replicas.iter() {
+            if let Err(e) = sql_plugin.add_replica_url(url).await {
+                eprintln!("Failed to add replica {}: {}", url, e);
+            }
+        }
+    }
     // No manual routing needed! run() finds hello_world automatically.
     NovaApp::new(name, port, app_state)
         .add_plugin(sql_plugin)

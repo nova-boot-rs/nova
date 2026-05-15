@@ -4,10 +4,14 @@ pub use sea_orm::{
 };
 pub use sea_orm_migration::prelude::*;
 use serde_json::Value as JsonValue;
+// using redis::Cmd::...query_async instead of AsyncCommands trait
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 
 /// Type alias for database sync task closures
 type SyncTask = Box<
@@ -23,6 +27,24 @@ pub struct NovaSql {
     pub allow_drop: bool,
     sync_tasks: Vec<SyncTask>,
     cache_store: Option<Arc<dyn QueryCacheStore>>,
+    replicas: Arc<RwLock<Vec<DatabaseConnection>>>,
+}
+
+/// Optional pool configuration passed to `connect_with_options`.
+pub struct PoolOptions {
+    pub max_connections: Option<u32>,
+    pub min_connections: Option<u32>,
+    pub connect_timeout_secs: Option<u64>,
+}
+
+impl Default for PoolOptions {
+    fn default() -> Self {
+        Self {
+            max_connections: None,
+            min_connections: None,
+            connect_timeout_secs: None,
+        }
+    }
 }
 
 #[async_trait]
@@ -35,6 +57,22 @@ pub trait QueryCacheStore: Send + Sync {
 #[derive(Clone, Default)]
 pub struct InMemoryQueryCache {
     inner: Arc<Mutex<HashMap<String, (String, Instant)>>>,
+}
+
+/// Redis-backed query cache store.
+pub struct RedisQueryCache {
+    manager: Arc<tokio::sync::Mutex<redis::aio::Connection>>,
+}
+
+impl RedisQueryCache {
+    /// Create a new RedisQueryCache from a redis connection URL (e.g. `redis://127.0.0.1/`).
+    pub async fn new(url: &str) -> Result<Self, redis::RedisError> {
+        let client = redis::Client::open(url)?;
+        let conn = client.get_async_connection().await?;
+        Ok(Self {
+            manager: Arc::new(tokio::sync::Mutex::new(conn)),
+        })
+    }
 }
 
 #[async_trait]
@@ -64,6 +102,32 @@ impl QueryCacheStore for InMemoryQueryCache {
     }
 }
 
+#[async_trait]
+impl QueryCacheStore for RedisQueryCache {
+    async fn get(&self, key: &str) -> Option<String> {
+        let mut conn = self.manager.lock().await;
+        match redis::Cmd::get(key)
+            .query_async::<_, Option<String>>(&mut *conn)
+            .await
+        {
+            Ok(opt) => opt,
+            Err(_) => None,
+        }
+    }
+
+    async fn set(&self, key: &str, value: String, ttl: Duration) {
+        let mut conn = self.manager.lock().await;
+        let _ = redis::Cmd::set_ex(key, value, ttl.as_secs() as usize)
+            .query_async::<_, ()>(&mut *conn)
+            .await;
+    }
+
+    async fn del(&self, key: &str) {
+        let mut conn = self.manager.lock().await;
+        let _ = redis::Cmd::del(key).query_async::<_, ()>(&mut *conn).await;
+    }
+}
+
 impl NovaSql {
     pub async fn connect(url: &str, allow_drop: bool) -> Self {
         let db = Database::connect(url)
@@ -74,7 +138,52 @@ impl NovaSql {
             allow_drop,
             sync_tasks: Vec::new(),
             cache_store: None,
+            replicas: Arc::new(RwLock::new(Vec::new())),
         }
+    }
+
+    /// Connect using `ConnectOptions`—caller can configure pooling options there.
+    pub async fn connect_with_options(options: sea_orm::ConnectOptions, allow_drop: bool) -> Self {
+        let db = Database::connect(options)
+            .await
+            .expect("Failed to connect to the database with options");
+
+        Self {
+            db,
+            allow_drop,
+            sync_tasks: Vec::new(),
+            cache_store: None,
+            replicas: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    /// Add a replica by database URL. Returns `DbErr` on connection failure.
+    pub async fn add_replica_url(&self, url: &str) -> Result<(), DbErr> {
+        let conn = Database::connect(url).await?;
+        self.replicas.write().await.push(conn);
+        Ok(())
+    }
+
+    /// Register replicas from a list of URLs; best-effort: returns the number of
+    /// successfully added replicas.
+    pub async fn register_replicas_from_urls(&self, urls: &[String]) -> usize {
+        let mut added = 0usize;
+        for url in urls {
+            if let Ok(_) = self.add_replica_url(url).await {
+                added += 1;
+            }
+        }
+        added
+    }
+
+    /// Add an existing `DatabaseConnection` as a replica.
+    pub async fn add_replica_conn(&self, conn: DatabaseConnection) {
+        self.replicas.write().await.push(conn);
+    }
+
+    /// Return a snapshot of current replica count.
+    pub async fn replica_count(&self) -> usize {
+        self.replicas.read().await.len()
     }
 
     pub fn with_cache_store(mut self, cache_store: Arc<dyn QueryCacheStore>) -> Self {
@@ -224,11 +333,83 @@ impl NovaSql {
         columns
     }
 
-    pub async fn run_migrations<M>(&self)
+    /// Run migrations using the provided `MigratorTrait` implementation.
+    /// Returns a `Result` with the underlying `DbErr` on failure.
+    pub async fn run_migrations<M>(&self) -> Result<(), DbErr>
     where
         M: MigratorTrait,
     {
-        M::up(&self.db, None).await.expect("Failed migrations");
+        M::up(&self.db, None).await
+    }
+
+    /// Run migrations with simple retry logic.
+    pub async fn run_migrations_with_retry<M>(
+        &self,
+        attempts: usize,
+        delay: Duration,
+    ) -> Result<(), DbErr>
+    where
+        M: MigratorTrait,
+    {
+        let mut last_err = None;
+        for _ in 0..attempts {
+            match M::up(&self.db, None).await {
+                Ok(_) => return Ok(()),
+                Err(e) => {
+                    last_err = Some(e);
+                    tokio::time::sleep(delay).await;
+                }
+            }
+        }
+
+        Err(last_err.expect("migration attempts failed but no error captured"))
+    }
+
+    /// Construct a `ReadWritePool` for injection into handlers; clones internal references.
+    pub fn read_write_pool(&self) -> ReadWritePool {
+        ReadWritePool::new(self.db.clone(), self.replicas.clone())
+    }
+}
+
+/// Simple read/write pool with round-robin replica selection for reads.
+#[derive(Clone)]
+pub struct ReadWritePool {
+    primary: DatabaseConnection,
+    replicas: Arc<RwLock<Vec<DatabaseConnection>>>,
+    rr: Arc<AtomicUsize>,
+}
+
+impl ReadWritePool {
+    pub fn new(
+        primary: DatabaseConnection,
+        replicas: Arc<RwLock<Vec<DatabaseConnection>>>,
+    ) -> Self {
+        Self {
+            primary,
+            replicas,
+            rr: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
+    /// Choose a replica connection for read queries. Async because replicas list is protected by an async lock.
+    pub async fn read(&self) -> DatabaseConnection {
+        let reps = self.replicas.read().await;
+        if reps.is_empty() {
+            return self.primary.clone();
+        }
+
+        let idx = self.rr.fetch_add(1, Ordering::Relaxed);
+        reps[idx % reps.len()].clone()
+    }
+
+    /// Return the primary connection for writes.
+    pub fn write(&self) -> DatabaseConnection {
+        self.primary.clone()
+    }
+
+    /// Add a replica connection dynamically.
+    pub async fn add_replica(&self, conn: DatabaseConnection) {
+        self.replicas.write().await.push(conn);
     }
 }
 
@@ -246,7 +427,9 @@ impl NovaPlugin for NovaSql {
     }
 
     fn extend_router(&self, router: Router) -> Router {
-        router.layer(Extension(self.db.clone()))
+        // Inject a ReadWritePool extension for handlers to use read/write splitting.
+        let pool = self.read_write_pool();
+        router.layer(Extension(pool))
     }
 }
 
