@@ -57,13 +57,13 @@ Make services robust against failure and connect to storage.
 - [DONE] Read/write splitting (primary + round-robin replicas)
 - [DONE] Cache hooks (Redis-backed query caching) with integration tests
 - [DONE] Example handlers demonstrating `ReadWritePool` usage
-- [PLANNED] Multi-tenancy column resolver
+- [DONE] Multi-tenancy column resolver
 
-### NoSQL Plugin (PLANNED)
-- [PLANNED] MongoDB adapter
-- [PLANNED] Redis adapter (cache + primary)
-- [PLANNED] Document mapping with serde
-- [PLANNED] Index management
+### NoSQL Plugin (IN PROGRESS)
+- [IN PROGRESS] MongoDB adapter (scaffold added; runtime client wiring pending)
+- [DONE] Redis adapter (cache + primary)
+- [DONE] Document mapping with serde
+- [DONE] Index management
 
 ### GraphDB Plugin (PLANNED)
 - [PLANNED] Neo4j/SurrealDB adapter

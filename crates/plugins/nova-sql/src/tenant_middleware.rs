@@ -1,6 +1,6 @@
 use super::tenant::{Tenant, TenantResolver};
 use axum::{
-    extract::{Request, FromRequestParts},
+    extract::{FromRequestParts, Request},
     middleware::Next,
     response::Response,
 };
@@ -14,7 +14,7 @@ pub async fn tenant_middleware(
 ) -> Response {
     let headers = request.headers().clone();
     let path = request.uri().path().to_string();
-    
+
     if let Some(tenant) = resolver.resolve(&headers, &path).await {
         request.extensions_mut().insert(tenant);
     }
@@ -33,14 +33,8 @@ impl<S: Send + Sync> FromRequestParts<S> for CurrentTenant {
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> + Send {
-        let tenant = parts
-            .extensions
-            .get::<Tenant>()
-            .cloned()
-            .map(CurrentTenant);
-        
-        async move {
-            tenant.ok_or((axum::http::StatusCode::UNAUTHORIZED, "Tenant not found"))
-        }
+        let tenant = parts.extensions.get::<Tenant>().cloned().map(CurrentTenant);
+
+        async move { tenant.ok_or((axum::http::StatusCode::UNAUTHORIZED, "Tenant not found")) }
     }
 }

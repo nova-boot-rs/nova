@@ -1423,6 +1423,14 @@ dependencies = [
 [[package]]
 name = "nova-nosql"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "nova-core",
+ "redis",
+ "serde",
+ "serde_json",
+ "tokio",
+]
 
 [[package]]
 name = "nova-observability"
