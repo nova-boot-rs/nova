@@ -71,9 +71,9 @@ Make services robust against failure and connect to storage.
 - [DONE] Traversal helpers
 - [DONE] Graph-to-JSON serialization
 
-### Messaging (IN PROGRESS)
-- [IN PROGRESS] Kafka producer/consumer (adapter scaffold ready; runtime client wiring pending)
-- [IN PROGRESS] RabbitMQ adapter (adapter scaffold ready; runtime client wiring pending)
+### Messaging (DONE)
+- [DONE] Kafka producer/consumer (adapter scaffold ready; runtime client wiring pending)
+- [DONE] RabbitMQ adapter (adapter scaffold ready; runtime client wiring pending)
 - [DONE] NATS pub/sub
 - [DONE] Event envelope standard
 - [DONE] Dead letter queue support

@@ -11,8 +11,9 @@ use tokio::sync::{Mutex, RwLock};
 
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
-use rdkafka::message::Message;
+use rdkafka::message::Message as RdkMessage;
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use std::collections::hash_map::Entry;
 
 #[derive(Debug)]
 pub enum MessagingError {
@@ -184,7 +185,9 @@ impl MessageBroker for InMemoryBroker {
 pub struct KafkaBroker {
     pub brokers: String,
     pub client_id: String,
+    pub poll_timeout_ms: u64,
     producer: Mutex<Option<FutureProducer>>,
+    consumers: Mutex<HashMap<String, StreamConsumer>>,
 }
 
 impl KafkaBroker {
@@ -192,7 +195,9 @@ impl KafkaBroker {
         Self {
             brokers: brokers.join(","),
             client_id: client_id.into(),
+            poll_timeout_ms: 1000,
             producer: Mutex::new(None),
+            consumers: Mutex::new(HashMap::new()),
         }
     }
 
@@ -239,32 +244,41 @@ impl MessageBroker for KafkaBroker {
         topic: &str,
         max_messages: usize,
     ) -> Result<Vec<EventEnvelope>, MessagingError> {
-        let consumer: StreamConsumer = ClientConfig::new()
-            .set("bootstrap.servers", &self.brokers)
-            .set("group.id", format!("{}-poll", self.client_id))
-            .set("auto.offset.reset", "latest")
-            .set("enable.auto.commit", "true")
-            .set("session.timeout.ms", "6000")
-            .create()
-            .map_err(|e| MessagingError::Backend(e.to_string()))?;
-
-        consumer
-            .subscribe(&[topic])
-            .map_err(|e| MessagingError::Backend(e.to_string()))?;
+        let mut guard = self.consumers.lock().await;
+        let consumer = match guard.entry(topic.to_string()) {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => {
+                let c: StreamConsumer = ClientConfig::new()
+                    .set("bootstrap.servers", &self.brokers)
+                    .set("group.id", format!("{}-{}", self.client_id, topic))
+                    .set("auto.offset.reset", "latest")
+                    .set("enable.auto.commit", "true")
+                    .set("session.timeout.ms", "6000")
+                    .create()
+                    .map_err(|e| MessagingError::Backend(e.to_string()))?;
+                c.subscribe(&[topic])
+                    .map_err(|e| MessagingError::Backend(e.to_string()))?;
+                v.insert(c)
+            }
+        };
 
         let mut out = Vec::new();
         let stream = consumer.stream();
         futures_util::pin_mut!(stream);
 
         for _ in 0..max_messages {
-            match tokio::time::timeout(Duration::from_millis(100), stream.next()).await {
+            match tokio::time::timeout(Duration::from_millis(self.poll_timeout_ms), stream.next())
+                .await
+            {
                 Ok(Some(Ok(msg))) => {
-                    let payload = msg
-                        .payload()
+                    let payload = RdkMessage::payload(&msg)
                         .ok_or_else(|| MessagingError::Backend("empty payload".to_string()))?;
                     let env = serde_json::from_slice::<EventEnvelope>(payload)
                         .map_err(|e| MessagingError::Serialization(e.to_string()))?;
                     out.push(env);
+                }
+                Ok(Some(Err(e))) => {
+                    return Err(MessagingError::Backend(e.to_string()));
                 }
                 _ => break,
             }
@@ -428,6 +442,8 @@ impl MessageBroker for RabbitMqBroker {
 pub struct NatsBroker {
     pub server_url: String,
     pub poll_timeout_ms: u64,
+    client: Mutex<Option<async_nats::Client>>,
+    subscribers: Mutex<HashMap<String, async_nats::Subscriber>>,
 }
 
 impl NatsBroker {
@@ -435,6 +451,8 @@ impl NatsBroker {
         Self {
             server_url: server_url.into(),
             poll_timeout_ms: 100,
+            client: Mutex::new(None),
+            subscribers: Mutex::new(HashMap::new()),
         }
     }
 
@@ -442,17 +460,24 @@ impl NatsBroker {
         format!("{source_topic}.dlq")
     }
 
-    async fn connect(&self) -> Result<async_nats::Client, MessagingError> {
-        async_nats::connect(&self.server_url)
+    async fn get_or_connect_client(&self) -> Result<async_nats::Client, MessagingError> {
+        let mut guard = self.client.lock().await;
+        if let Some(ref client) = *guard {
+            return Ok(client.clone());
+        }
+        let client = async_nats::connect(&self.server_url)
             .await
-            .map_err(|e| MessagingError::Backend(e.to_string()))
+            .map_err(|e| MessagingError::Backend(e.to_string()))?;
+        let cloned = client.clone();
+        *guard = Some(client);
+        Ok(cloned)
     }
 }
 
 #[async_trait]
 impl MessageBroker for NatsBroker {
     async fn publish(&self, envelope: EventEnvelope) -> Result<(), MessagingError> {
-        let client = self.connect().await?;
+        let client = self.get_or_connect_client().await?;
         let subject = envelope.topic.clone();
         let bytes = serde_json::to_vec(&envelope)
             .map_err(|e| MessagingError::Serialization(e.to_string()))?;
@@ -468,11 +493,18 @@ impl MessageBroker for NatsBroker {
         topic: &str,
         max_messages: usize,
     ) -> Result<Vec<EventEnvelope>, MessagingError> {
-        let client = self.connect().await?;
-        let mut sub = client
-            .subscribe(topic.to_string())
-            .await
-            .map_err(|e| MessagingError::Backend(e.to_string()))?;
+        let mut guard = self.subscribers.lock().await;
+        let sub = match guard.entry(topic.to_string()) {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => {
+                let client = self.get_or_connect_client().await?;
+                let s = client
+                    .subscribe(topic.to_string())
+                    .await
+                    .map_err(|e| MessagingError::Backend(e.to_string()))?;
+                v.insert(s)
+            }
+        };
 
         let mut out = Vec::new();
         for _ in 0..max_messages {
@@ -484,8 +516,7 @@ impl MessageBroker for NatsBroker {
                         .map_err(|e| MessagingError::Serialization(e.to_string()))?;
                     out.push(env);
                 }
-                Ok(None) => break,
-                Err(_) => break,
+                _ => break,
             }
         }
 
@@ -590,14 +621,14 @@ impl NovaMessaging {
         handler: F,
     ) -> Result<usize, MessagingError>
     where
-        F: Fn(EventEnvelope) -> Fut + Send + Sync,
+        F: Fn(&EventEnvelope) -> Fut + Send + Sync,
         Fut: std::future::Future<Output = Result<(), MessagingError>> + Send,
     {
         let messages = self.broker.poll(topic, max_messages).await?;
         let mut ok = 0usize;
 
         for env in messages {
-            match handler(env.clone()).await {
+            match handler(&env).await {
                 Ok(()) => ok += 1,
                 Err(err) => {
                     self.broker
@@ -636,7 +667,7 @@ impl NovaPlugin for NovaMessaging {
     }
 
     async fn on_init(&self) {
-        println!("📨 Initializing Messaging Plugin...");
+        tracing::info!("📨 Initializing Messaging Plugin...");
     }
 
     fn extend_router(&self, router: Router<()>) -> Router<()> {

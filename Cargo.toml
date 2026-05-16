@@ -12,7 +12,7 @@ members = [
     "crates/nova-auth",
     "crates/nova-cli",
     "crates/nova-test",
-    "example/demo",
+    "example/demo", "crates/nova-data-patterns",
 ]
 resolver = "2"
 

@@ -2469,6 +2469,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-data-patterns"
+version = "0.1.0"
+
+[[package]]
 name = "nova-discovery"
 version = "0.1.0"
 
@@ -2522,6 +2526,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
