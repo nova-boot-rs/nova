@@ -65,11 +65,11 @@ Make services robust against failure and connect to storage.
 - [DONE] Document mapping with serde
 - [DONE] Index management
 
-### GraphDB Plugin (PLANNED)
-- [PLANNED] Neo4j/SurrealDB adapter
-- [PLANNED] Cypher/GraphQL query builder
-- [PLANNED] Traversal helpers
-- [PLANNED] Graph-to-JSON serialization
+### GraphDB Plugin (IN PROGRESS)
+- [IN PROGRESS] Neo4j/SurrealDB adapter (driver-backed runtime wiring pending)
+- [DONE] Cypher/GraphQL query builder
+- [DONE] Traversal helpers
+- [DONE] Graph-to-JSON serialization
 
 ### Messaging (PLANNED)
 - [PLANNED] Kafka producer/consumer
