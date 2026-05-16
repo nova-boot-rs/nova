@@ -17,16 +17,84 @@ jobs:
                     --health-interval 10s
                     --health-timeout 5s
                     --health-retries 5
+
+            kafka:
+                image: bitnami/kafka:latest
+                ports:
+                    - 9092:9092
+                env:
+                    KAFKA_CFG_NODE_ID: 0
+                    KAFKA_CFG_PROCESS_ROLES: controller,broker
+                    KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+                    KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+                    KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+                    KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+                options: >-
+                    --health-cmd "kafka-topics.sh --bootstrap-server localhost:9092 --list"
+                    --health-interval 15s
+                    --health-timeout 10s
+                    --health-retries 15
+
+            rabbitmq:
+                image: rabbitmq:3-management-alpine
+                ports:
+                    - 5672:5672
+                options: >-
+                    --health-cmd "rabbitmq-diagnostics check_port_connectivity"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            nats:
+                image: nats:latest
+                ports:
+                    - 4222:4222
+                options: >-
+                    --health-cmd "nats server check connection"
+                    --health-interval 5s
+                    --health-timeout 3s
+                    --health-retries 3
+
         steps:
             - uses: actions/checkout@v4
+
             - uses: dtolnay/rust-toolchain@stable
               with:
                 components: rustfmt, clippy
-            - uses: Swatinem/rust-cache@v2      # fast, caches deps
-            - run: cargo fmt --check
-            - run: cargo clippy -- -D warnings
-            - run: cargo test
-            - name: Run Redis integration test
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Install protoc
+              run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+            - name: Check formatting
+              run: cargo fmt --all --check
+
+            - name: Clippy
+              run: cargo clippy --workspace --all-features -- -D warnings
+
+            - name: Build
+              run: cargo build --workspace --all-features
+
+            - name: Unit tests
+              run: cargo test --workspace --all-features
+
+            - name: Redis integration tests
               env:
                 NOVA_TEST_REDIS_URL: redis://127.0.0.1:6379/
-              run: cargo test -p nova-core --features redis-store -- --ignored redis_store_basic_flow
+              run: cargo test -p nova-core --features redis-store -- --ignored redis
+
+            - name: Kafka integration tests
+              env:
+                KAFKA_BROKERS: 127.0.0.1:9092
+              run: cargo test -p nova-messaging --features kafka -- --ignored kafka
+
+            - name: RabbitMQ integration tests
+              env:
+                RABBITMQ_URL: amqp://127.0.0.1:5672
+              run: cargo test -p nova-messaging -- --ignored rabbitmq
+
+            - name: NATS integration tests
+              env:
+                NATS_URL: nats://127.0.0.1:4222
+              run: cargo test -p nova-messaging -- --ignored nats
