@@ -50,7 +50,7 @@ jobs:
 
             nats:
                 image: nats:alpine
-                ports:
+                ports:  
                     - 4222:4222
                 options: >-
                         --health-cmd "wget -q -O- http://localhost:8222/healthz"
