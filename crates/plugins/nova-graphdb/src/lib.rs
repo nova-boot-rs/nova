@@ -952,6 +952,54 @@ mod tests {
         assert_eq!(edges.len(), 2);
     }
 
+    #[tokio::test]
+    async fn in_memory_rejects_empty_node_id() {
+        let store = InMemoryGraphStore::default();
+        let result = store
+            .upsert_node(GraphNode {
+                id: String::new(),
+                labels: vec!["User".to_string()],
+                properties: HashMap::new(),
+            })
+            .await;
+
+        assert!(matches!(result, Err(GraphDbError::InvalidInput(_))));
+    }
+
+    #[tokio::test]
+    async fn in_memory_rejects_invalid_edge_input() {
+        let store = InMemoryGraphStore::default();
+
+        let empty_id = store
+            .upsert_edge(GraphEdge {
+                id: String::new(),
+                from: "a".to_string(),
+                to: "b".to_string(),
+                rel_type: "FOLLOWS".to_string(),
+                properties: HashMap::new(),
+            })
+            .await;
+        assert!(matches!(empty_id, Err(GraphDbError::InvalidInput(_))));
+
+        let missing_endpoints = store
+            .upsert_edge(GraphEdge {
+                id: "e1".to_string(),
+                from: "a".to_string(),
+                to: "b".to_string(),
+                rel_type: "FOLLOWS".to_string(),
+                properties: HashMap::new(),
+            })
+            .await;
+        assert!(matches!(missing_endpoints, Err(GraphDbError::InvalidInput(_))));
+    }
+
+    #[tokio::test]
+    async fn in_memory_execute_is_not_implemented() {
+        let store = InMemoryGraphStore::default();
+        let result = store.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
+        assert!(matches!(result, Err(GraphDbError::NotImplemented(_))));
+    }
+
     #[test]
     fn cypher_builder_produces_expected_query() {
         let q = CypherQueryBuilder::new()
@@ -982,6 +1030,15 @@ mod tests {
         let graph = NovaGraphDb::neo4j("http://127.0.0.1:65535", "neo4j", "pass");
         let result = graph.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
         assert!(matches!(result, Err(GraphDbError::Backend(_))));
+    }
+
+    #[tokio::test]
+    async fn neo4j_rejects_graphql_query_type() {
+        let graph = NovaGraphDb::neo4j("http://127.0.0.1:65535", "neo4j", "pass");
+        let result = graph
+            .execute(GraphQuery::GraphQl("query { users { id } }".to_string()))
+            .await;
+        assert!(matches!(result, Err(GraphDbError::InvalidInput(_))));
     }
 
     #[tokio::test]
@@ -1029,6 +1086,51 @@ mod tests {
 
         assert_eq!(n1.id, "u2");
         assert_eq!(n2.id, "u3");
+    }
+
+    #[test]
+    fn surreal_helpers_neighbors_fallback_shape_parses() {
+        let payload = serde_json::json!([
+            {
+                "status": "OK",
+                "result": [
+                    {
+                        "neighbors": [
+                            {
+                                "id": "node:u7",
+                                "properties": {"name": "fallback"}
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]);
+
+        let rows = surreal_result_rows(&payload);
+        let neighbors = rows[0]
+            .get("neighbors")
+            .and_then(JsonValue::as_array)
+            .expect("neighbors should exist");
+
+        let parsed = surreal_value_to_node(&neighbors[0]).expect("fallback neighbor shape parses");
+        assert_eq!(parsed.id, "u7");
+    }
+
+    #[tokio::test]
+    async fn graph_to_json_serializes_traversal_output() {
+        let graph = NovaGraphDb::in_memory();
+        graph
+            .upsert_node(GraphNode {
+                id: "s1".to_string(),
+                labels: vec!["User".to_string()],
+                properties: HashMap::new(),
+            })
+            .await
+            .expect("insert node");
+
+        let json = graph.traverse_json("s1", 1).await.expect("traverse json");
+        assert!(json.get("nodes").is_some());
+        assert!(json.get("edges").is_some());
     }
 
     #[test]
