@@ -59,8 +59,8 @@ Make services robust against failure and connect to storage.
 - [DONE] Example handlers demonstrating `ReadWritePool` usage
 - [DONE] Multi-tenancy column resolver
 
-### NoSQL Plugin (IN PROGRESS)
-- [IN PROGRESS] MongoDB adapter (scaffold added; runtime client wiring pending)
+### NoSQL Plugin (DONE)
+- [DONE] MongoDB adapter
 - [DONE] Redis adapter (cache + primary)
 - [DONE] Document mapping with serde
 - [DONE] Index management

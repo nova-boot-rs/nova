@@ -1,4 +1,10 @@
 use async_trait::async_trait;
+use futures_util::TryStreamExt;
+use mongodb::{
+    Client,
+    bson::{Bson, Document, doc},
+    options::IndexOptions,
+};
 use nova_core::{NovaPlugin, async_trait as nova_async_trait, axum::Extension, axum::Router};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;
@@ -218,39 +224,119 @@ impl DocumentCacheStore for RedisDocumentStore {
 
 /// Mongo adapter scaffold. This is intentionally lightweight until a full client is wired.
 pub struct MongoDocumentStore {
-    pub uri: String,
-    pub database: String,
+    db: mongodb::Database,
 }
 
 impl MongoDocumentStore {
-    pub fn new(uri: impl Into<String>, database: impl Into<String>) -> Self {
-        Self {
-            uri: uri.into(),
-            database: database.into(),
-        }
+    pub async fn new(uri: impl AsRef<str>, database: impl AsRef<str>) -> Result<Self, NoSqlError> {
+        let client = Client::with_uri_str(uri.as_ref())
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+
+        Ok(Self {
+            db: client.database(database.as_ref()),
+        })
     }
 }
 
 #[async_trait]
 impl DocumentStore for MongoDocumentStore {
-    async fn get(&self, _collection: &str, _id: &str) -> Result<Option<JsonValue>, NoSqlError> {
-        Err(NoSqlError::NotImplemented("MongoDB runtime client wiring is pending"))
+    async fn get(&self, collection: &str, id: &str) -> Result<Option<JsonValue>, NoSqlError> {
+        let col = self.db.collection::<Document>(collection);
+        let found = col
+            .find_one(doc! { "_id": id })
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+
+        found
+            .map(|d| serde_json::to_value(d).map_err(|e| NoSqlError::Serialization(e.to_string())))
+            .transpose()
     }
 
-    async fn upsert(&self, _collection: &str, _id: &str, _doc: JsonValue) -> Result<(), NoSqlError> {
-        Err(NoSqlError::NotImplemented("MongoDB runtime client wiring is pending"))
+    async fn upsert(&self, collection: &str, id: &str, doc: JsonValue) -> Result<(), NoSqlError> {
+        let col = self.db.collection::<Document>(collection);
+
+        let mut bson_doc: Document = mongodb::bson::to_document(&doc)
+            .map_err(|e| NoSqlError::Serialization(e.to_string()))?;
+        bson_doc.insert("_id", Bson::String(id.to_string()));
+
+        col.replace_one(doc! { "_id": id }, bson_doc)
+            .upsert(true)
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+        Ok(())
     }
 
-    async fn delete(&self, _collection: &str, _id: &str) -> Result<(), NoSqlError> {
-        Err(NoSqlError::NotImplemented("MongoDB runtime client wiring is pending"))
+    async fn delete(&self, collection: &str, id: &str) -> Result<(), NoSqlError> {
+        let col = self.db.collection::<Document>(collection);
+        col.delete_one(doc! { "_id": id })
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+        Ok(())
     }
 
-    async fn create_index(&self, _collection: &str, _index: NoSqlIndex) -> Result<(), NoSqlError> {
-        Err(NoSqlError::NotImplemented("MongoDB runtime client wiring is pending"))
+    async fn create_index(&self, collection: &str, index: NoSqlIndex) -> Result<(), NoSqlError> {
+        let col = self.db.collection::<Document>(collection);
+
+        let mut key_doc = Document::new();
+        for field in index.fields {
+            key_doc.insert(field, Bson::Int32(1));
+        }
+
+        let model = mongodb::IndexModel::builder()
+            .keys(key_doc)
+            .options(
+                IndexOptions::builder()
+                    .name(Some(index.name))
+                    .unique(Some(index.unique))
+                    .build(),
+            )
+            .build();
+
+        col.create_index(model)
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+        Ok(())
     }
 
-    async fn list_indexes(&self, _collection: &str) -> Result<Vec<NoSqlIndex>, NoSqlError> {
-        Err(NoSqlError::NotImplemented("MongoDB runtime client wiring is pending"))
+    async fn list_indexes(&self, collection: &str) -> Result<Vec<NoSqlIndex>, NoSqlError> {
+        let col = self.db.collection::<Document>(collection);
+        let mut cursor = col
+            .list_indexes()
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?;
+
+        let mut out = Vec::new();
+        while let Some(model) = cursor
+            .try_next()
+            .await
+            .map_err(|e| NoSqlError::Backend(e.to_string()))?
+        {
+            let fields = model
+                .keys
+                .keys()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>();
+
+            let name = model
+                .options
+                .as_ref()
+                .and_then(|o| o.name.clone())
+                .unwrap_or_else(|| fields.join("_"));
+            let unique = model
+                .options
+                .as_ref()
+                .and_then(|o| o.unique)
+                .unwrap_or(false);
+
+            out.push(NoSqlIndex {
+                name,
+                fields,
+                unique,
+            });
+        }
+
+        Ok(out)
     }
 }
 
@@ -270,6 +356,11 @@ impl NovaNoSql {
 
     pub async fn redis_primary(url: &str, namespace: impl Into<String>) -> Result<Self, NoSqlError> {
         let store = RedisDocumentStore::new(url, namespace).await?;
+        Ok(Self::new(Arc::new(store)))
+    }
+
+    pub async fn mongo_primary(uri: &str, database: &str) -> Result<Self, NoSqlError> {
+        let store = MongoDocumentStore::new(uri, database).await?;
         Ok(Self::new(Arc::new(store)))
     }
 
@@ -352,6 +443,62 @@ impl NovaPlugin for NovaNoSql {
 mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
+    use tokio::sync::Mutex;
+
+    #[derive(Default)]
+    struct TestCache {
+        inner: Mutex<HashMap<String, String>>,
+    }
+
+    #[async_trait::async_trait]
+    impl DocumentCacheStore for TestCache {
+        async fn get(&self, key: &str) -> Option<String> {
+            self.inner.lock().await.get(key).cloned()
+        }
+
+        async fn set(&self, key: &str, value: String, _ttl_secs: usize) {
+            self.inner.lock().await.insert(key.to_string(), value);
+        }
+
+        async fn del(&self, key: &str) {
+            self.inner.lock().await.remove(key);
+        }
+    }
+
+    struct FailingStore;
+
+    #[async_trait::async_trait]
+    impl DocumentStore for FailingStore {
+        async fn get(&self, _collection: &str, _id: &str) -> Result<Option<JsonValue>, NoSqlError> {
+            Err(NoSqlError::Backend("primary should not be called".to_string()))
+        }
+
+        async fn upsert(
+            &self,
+            _collection: &str,
+            _id: &str,
+            _doc: JsonValue,
+        ) -> Result<(), NoSqlError> {
+            Err(NoSqlError::Backend("not used".to_string()))
+        }
+
+        async fn delete(&self, _collection: &str, _id: &str) -> Result<(), NoSqlError> {
+            Err(NoSqlError::Backend("not used".to_string()))
+        }
+
+        async fn create_index(
+            &self,
+            _collection: &str,
+            _index: NoSqlIndex,
+        ) -> Result<(), NoSqlError> {
+            Err(NoSqlError::Backend("not used".to_string()))
+        }
+
+        async fn list_indexes(&self, _collection: &str) -> Result<Vec<NoSqlIndex>, NoSqlError> {
+            Err(NoSqlError::Backend("not used".to_string()))
+        }
+    }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
     struct UserDoc {
@@ -392,5 +539,56 @@ mod tests {
         assert_eq!(indexes[0].name, "users_email_idx");
         assert_eq!(indexes[0].fields, vec!["email".to_string()]);
         assert!(indexes[0].unique);
+    }
+
+    #[tokio::test]
+    async fn mongo_invalid_uri_returns_error() {
+        let res = MongoDocumentStore::new("not-a-uri", "nova").await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn cache_hit_bypasses_primary_store() {
+        let cache = Arc::new(TestCache::default());
+        let key = "nosql:users:u-1";
+        cache
+            .set(
+                key,
+                "{\"id\":\"u-1\",\"email\":\"cached@nova.rs\"}".to_string(),
+                30,
+            )
+            .await;
+
+        let nosql = NovaNoSql::new(Arc::new(FailingStore)).with_cache(cache);
+        let loaded: Option<UserDoc> = nosql.get("users", "u-1").await.expect("cache hit should succeed");
+
+        assert_eq!(loaded.map(|u| u.email), Some("cached@nova.rs".to_string()));
+    }
+
+    #[tokio::test]
+    async fn delete_invalidates_cache_entry() {
+        let cache = Arc::new(TestCache::default());
+        let store = Arc::new(InMemoryDocumentStore::default());
+        let nosql = NovaNoSql::new(store).with_cache(cache.clone());
+
+        let user = UserDoc {
+            id: "u-del".to_string(),
+            email: "delete@nova.rs".to_string(),
+        };
+
+        nosql
+            .upsert("users", &user.id, &user)
+            .await
+            .expect("upsert should populate cache");
+
+        let cache_key = "nosql:users:u-del";
+        assert!(cache.get(cache_key).await.is_some());
+
+        nosql
+            .delete("users", &user.id)
+            .await
+            .expect("delete should remove from store and cache");
+
+        assert!(cache.get(cache_key).await.is_none());
     }
 }
