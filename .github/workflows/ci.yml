@@ -53,10 +53,10 @@ jobs:
                 ports:
                     - 4222:4222
                 options: >-
-                    --health-cmd "nats server check connection"
-                    --health-interval 5s
-                    --health-timeout 3s
-                    --health-retries 3
+                        --health-cmd "wget -q -O- http://localhost:8222/healthz"
+                        --health-interval 5s
+                        --health-timeout 3s
+                        --health-retries 5
 
         steps:
             - uses: actions/checkout@v4
