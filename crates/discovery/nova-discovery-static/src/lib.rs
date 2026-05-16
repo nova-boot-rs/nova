@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use nova_core::discovery::{Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream};
+use nova_core::discovery::{
+    Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
+};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
@@ -108,11 +110,7 @@ impl Discovery for StaticDiscovery {
             .collect())
     }
 
-    async fn heartbeat(
-        &self,
-        service_name: &str,
-        instance_id: &str,
-    ) -> Result<(), DiscoveryError> {
+    async fn heartbeat(&self, service_name: &str, instance_id: &str) -> Result<(), DiscoveryError> {
         let mut found = false;
         {
             let mut services = self.services.write().await;
@@ -209,9 +207,15 @@ mod tests {
         let discovery = StaticDiscovery::new(vec![]);
         let instance = test_instance("users", "users-1", "127.0.0.1:9000");
 
-        discovery.register(instance.clone()).await.expect("register should succeed");
+        discovery
+            .register(instance.clone())
+            .await
+            .expect("register should succeed");
 
-        let instances = discovery.discover("users").await.expect("discover should succeed");
+        let instances = discovery
+            .discover("users")
+            .await
+            .expect("discover should succeed");
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].id, instance.id);
         assert_eq!(instances[0].address, instance.address);
@@ -220,20 +224,25 @@ mod tests {
 
     #[tokio::test]
     async fn deregister_and_discover_empty() {
-        let discovery = StaticDiscovery::new(vec![test_instance("users", "users-1", "127.0.0.1:9000")]);
+        let discovery =
+            StaticDiscovery::new(vec![test_instance("users", "users-1", "127.0.0.1:9000")]);
 
         discovery
             .deregister("users", "users-1")
             .await
             .expect("deregister should succeed");
 
-        let instances = discovery.discover("users").await.expect("discover should succeed");
+        let instances = discovery
+            .discover("users")
+            .await
+            .expect("discover should succeed");
         assert!(instances.is_empty());
     }
 
     #[tokio::test]
     async fn heartbeat_updates_timestamp() {
-        let discovery = StaticDiscovery::new(vec![test_instance("users", "users-1", "127.0.0.1:9000")]);
+        let discovery =
+            StaticDiscovery::new(vec![test_instance("users", "users-1", "127.0.0.1:9000")]);
 
         let before = discovery
             .discover("users")

@@ -1,11 +1,13 @@
 use async_trait::async_trait;
 use etcd_client::{Client, DeleteOptions, EventType, GetOptions, PutOptions, WatchOptions};
-use nova_core::discovery::{Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream};
+use nova_core::discovery::{
+    Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{RwLock, mpsc};
 use tokio::time::Duration;
 use tracing::warn;
 
@@ -57,7 +59,11 @@ impl EtcdDiscovery {
     }
 
     fn instance_key_from(prefix: &str, service_name: &str, instance_id: &str) -> String {
-        format!("{}{}", Self::service_prefix_from(prefix, service_name), instance_id)
+        format!(
+            "{}{}",
+            Self::service_prefix_from(prefix, service_name),
+            instance_id
+        )
     }
 
     fn service_prefix(&self, service_name: &str) -> String {
@@ -113,7 +119,10 @@ impl EtcdDiscovery {
         DiscoveryError::Backend(error.to_string())
     }
 
-    async fn discover_instances(&self, service_name: &str) -> Result<Vec<ServiceInstance>, DiscoveryError> {
+    async fn discover_instances(
+        &self,
+        service_name: &str,
+    ) -> Result<Vec<ServiceInstance>, DiscoveryError> {
         let mut client = self.client.clone();
         let response = client
             .get(
@@ -169,7 +178,10 @@ impl EtcdDiscovery {
         loop {
             let has_watchers = {
                 let watchers = self.watchers.read().await;
-                watchers.get(&service_name).map(|entries| !entries.is_empty()).unwrap_or(false)
+                watchers
+                    .get(&service_name)
+                    .map(|entries| !entries.is_empty())
+                    .unwrap_or(false)
             };
 
             if !has_watchers {
@@ -238,7 +250,8 @@ impl Discovery for EtcdDiscovery {
     async fn register(&self, instance: ServiceInstance) -> Result<(), DiscoveryError> {
         let key = self.instance_key(&instance.name, &instance.id);
         let record = Self::service_instance_to_record(&instance);
-        let payload = serde_json::to_vec(&record).map_err(|error| DiscoveryError::Backend(error.to_string()))?;
+        let payload = serde_json::to_vec(&record)
+            .map_err(|error| DiscoveryError::Backend(error.to_string()))?;
 
         if let Some(lease_id) = self.leases.read().await.get(&key).copied() {
             let mut client = self.client.clone();
@@ -271,19 +284,14 @@ impl Discovery for EtcdDiscovery {
         self.discover_instances(service_name).await
     }
 
-    async fn heartbeat(
-        &self,
-        service_name: &str,
-        instance_id: &str,
-    ) -> Result<(), DiscoveryError> {
+    async fn heartbeat(&self, service_name: &str, instance_id: &str) -> Result<(), DiscoveryError> {
         let key = self.instance_key(service_name, instance_id);
-        let lease_id = self
-            .leases
-            .read()
-            .await
-            .get(&key)
-            .copied()
-            .ok_or_else(|| DiscoveryError::NotFound(format!("service '{}' instance '{}' not found", service_name, instance_id)))?;
+        let lease_id = self.leases.read().await.get(&key).copied().ok_or_else(|| {
+            DiscoveryError::NotFound(format!(
+                "service '{}' instance '{}' not found",
+                service_name, instance_id
+            ))
+        })?;
 
         let mut client = self.client.clone();
         let (mut keeper, mut lease_stream) = client
@@ -291,17 +299,22 @@ impl Discovery for EtcdDiscovery {
             .await
             .map_err(Self::map_backend_error)?;
         keeper.keep_alive().await.map_err(Self::map_backend_error)?;
-        let _ = lease_stream.message().await.map_err(Self::map_backend_error)?;
+        let _ = lease_stream
+            .message()
+            .await
+            .map_err(Self::map_backend_error)?;
 
         let response = client
             .get(key.clone(), None)
             .await
             .map_err(Self::map_backend_error)?;
 
-        let kv = response
-            .kvs()
-            .first()
-            .ok_or_else(|| DiscoveryError::NotFound(format!("service '{}' instance '{}' not found", service_name, instance_id)))?;
+        let kv = response.kvs().first().ok_or_else(|| {
+            DiscoveryError::NotFound(format!(
+                "service '{}' instance '{}' not found",
+                service_name, instance_id
+            ))
+        })?;
 
         let mut instance = Self::parse_service_instance(kv.value())?;
         instance.status = InstanceStatus::Healthy;
@@ -316,7 +329,8 @@ impl Discovery for EtcdDiscovery {
             last_heartbeat_unix_ms: Some(Self::now_millis()),
         };
 
-        let payload = serde_json::to_vec(&record).map_err(|error| DiscoveryError::Backend(error.to_string()))?;
+        let payload = serde_json::to_vec(&record)
+            .map_err(|error| DiscoveryError::Backend(error.to_string()))?;
 
         client
             .put(key, payload, Some(PutOptions::new().with_lease(lease_id)))
@@ -342,7 +356,10 @@ impl Discovery for EtcdDiscovery {
             .map_err(Self::map_backend_error)?;
 
         if delete_response.deleted() == 0 {
-            return Err(DiscoveryError::NotFound(format!("service '{}' instance '{}' not found", service_name, instance_id)));
+            return Err(DiscoveryError::NotFound(format!(
+                "service '{}' instance '{}' not found",
+                service_name, instance_id
+            )));
         }
 
         if let Some(lease_id) = lease_id {
@@ -357,7 +374,10 @@ impl Discovery for EtcdDiscovery {
         let (tx, rx) = mpsc::channel(16);
         {
             let mut watchers = self.watchers.write().await;
-            watchers.entry(service_name.to_string()).or_default().push(tx.clone());
+            watchers
+                .entry(service_name.to_string())
+                .or_default()
+                .push(tx.clone());
         }
 
         let initial_snapshot = self.discover(service_name).await?;
@@ -383,8 +403,14 @@ mod tests {
 
     #[test]
     fn key_construction_uses_prefix() {
-        assert_eq!(EtcdDiscovery::service_prefix_from("nova/services", "users"), "/nova/services/users/");
-        assert_eq!(EtcdDiscovery::instance_key_from("nova/services", "users", "users-1"), "/nova/services/users/users-1");
+        assert_eq!(
+            EtcdDiscovery::service_prefix_from("nova/services", "users"),
+            "/nova/services/users/"
+        );
+        assert_eq!(
+            EtcdDiscovery::instance_key_from("nova/services", "users", "users-1"),
+            "/nova/services/users/users-1"
+        );
     }
 
     #[test]
@@ -407,14 +433,18 @@ mod tests {
         assert_eq!(discovered.id, "users-1");
         assert_eq!(discovered.name, "users");
         assert_eq!(discovered.address, "127.0.0.1:9000");
-        assert_eq!(discovered.metadata.get("zone").map(String::as_str), Some("a"));
+        assert_eq!(
+            discovered.metadata.get("zone").map(String::as_str),
+            Some("a")
+        );
         assert_eq!(discovered.status, InstanceStatus::Healthy);
         assert!(discovered.last_heartbeat.is_some());
     }
 
     #[tokio::test]
     async fn invalid_endpoint_returns_connection_failed() {
-        let err = match EtcdDiscovery::new(vec!["http://[".to_string()], "nova/services", 15).await {
+        let err = match EtcdDiscovery::new(vec!["http://[".to_string()], "nova/services", 15).await
+        {
             Ok(_) => panic!("should fail to connect"),
             Err(err) => err,
         };

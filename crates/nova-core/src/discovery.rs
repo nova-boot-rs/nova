@@ -37,18 +37,11 @@ pub trait Discovery: Send + Sync + 'static {
     async fn discover(&self, service_name: &str) -> Result<Vec<ServiceInstance>, DiscoveryError>;
 
     /// Send a heartbeat to keep registration alive.
-    async fn heartbeat(
-        &self,
-        service_name: &str,
-        instance_id: &str,
-    ) -> Result<(), DiscoveryError>;
+    async fn heartbeat(&self, service_name: &str, instance_id: &str) -> Result<(), DiscoveryError>;
 
     /// Remove a service instance from the registry.
-    async fn deregister(
-        &self,
-        service_name: &str,
-        instance_id: &str,
-    ) -> Result<(), DiscoveryError>;
+    async fn deregister(&self, service_name: &str, instance_id: &str)
+    -> Result<(), DiscoveryError>;
 
     /// Watch for changes to a service's instances. Returns a stream of instance lists.
     async fn watch(&self, service_name: &str) -> Result<WatchStream, DiscoveryError>;

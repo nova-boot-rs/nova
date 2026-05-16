@@ -1,10 +1,12 @@
 use async_trait::async_trait;
-use nova_core::discovery::{Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream};
+use nova_core::discovery::{
+    Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
+};
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{RwLock, mpsc};
 use tracing::{debug, warn};
 
 #[derive(Clone)]
@@ -19,7 +21,11 @@ pub struct ConsulDiscovery {
 }
 
 impl ConsulDiscovery {
-    pub fn new(base_url: impl Into<String>, datacenter: Option<String>, token: Option<String>) -> Self {
+    pub fn new(
+        base_url: impl Into<String>,
+        datacenter: Option<String>,
+        token: Option<String>,
+    ) -> Self {
         Self {
             client: reqwest::Client::new(),
             base_url: base_url.into().trim_end_matches('/').to_string(),
@@ -31,7 +37,11 @@ impl ConsulDiscovery {
     }
 
     fn url(&self, path: &str) -> String {
-        format!("{}/{}", self.base_url.trim_end_matches('/'), path.trim_start_matches('/'))
+        format!(
+            "{}/{}",
+            self.base_url.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        )
     }
 
     fn request(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
@@ -45,14 +55,19 @@ impl ConsulDiscovery {
         builder
     }
 
-    async fn send_request(&self, builder: reqwest::RequestBuilder) -> Result<reqwest::Response, DiscoveryError> {
+    async fn send_request(
+        &self,
+        builder: reqwest::RequestBuilder,
+    ) -> Result<reqwest::Response, DiscoveryError> {
         let response = builder
             .send()
             .await
             .map_err(|e| DiscoveryError::Backend(e.to_string()))?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(DiscoveryError::NotFound("consul resource not found".to_string()));
+            return Err(DiscoveryError::NotFound(
+                "consul resource not found".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -136,7 +151,10 @@ impl ConsulDiscovery {
         }
     }
 
-    async fn current_instances(&self, service_name: &str) -> Result<Vec<ServiceInstance>, DiscoveryError> {
+    async fn current_instances(
+        &self,
+        service_name: &str,
+    ) -> Result<Vec<ServiceInstance>, DiscoveryError> {
         self.discover(service_name).await
     }
 
@@ -146,7 +164,10 @@ impl ConsulDiscovery {
         loop {
             let has_watchers = {
                 let watchers = self.watchers.read().await;
-                watchers.get(&service_name).map(|items| !items.is_empty()).unwrap_or(false)
+                watchers
+                    .get(&service_name)
+                    .map(|items| !items.is_empty())
+                    .unwrap_or(false)
             };
 
             if !has_watchers {
@@ -175,7 +196,11 @@ impl ConsulDiscovery {
         service_name: &str,
         last_index: u64,
     ) -> Result<(Vec<ServiceInstance>, u64), DiscoveryError> {
-        let mut request = self.request(reqwest::Method::GET, &format!("/v1/health/service/{service_name}"))
+        let mut request = self
+            .request(
+                reqwest::Method::GET,
+                &format!("/v1/health/service/{service_name}"),
+            )
             .query(&[("passing", "true"), ("wait", "30s")]);
         if last_index > 0 {
             request = request.query(&[("index", &last_index.to_string())]);
@@ -246,18 +271,28 @@ impl Discovery for ConsulDiscovery {
             }
         });
 
-        self.send_request(self.request(reqwest::Method::PUT, "/v1/agent/service/register").json(&payload))
-            .await?;
+        self.send_request(
+            self.request(reqwest::Method::PUT, "/v1/agent/service/register")
+                .json(&payload),
+        )
+        .await?;
 
-        self.notify_watchers(&instance.name, self.current_instances(&instance.name).await?).await;
+        self.notify_watchers(
+            &instance.name,
+            self.current_instances(&instance.name).await?,
+        )
+        .await;
         Ok(())
     }
 
     async fn discover(&self, service_name: &str) -> Result<Vec<ServiceInstance>, DiscoveryError> {
         let response = self
             .send_request(
-                self.request(reqwest::Method::GET, &format!("/v1/health/service/{service_name}"))
-                    .query(&[("passing", "true")]),
+                self.request(
+                    reqwest::Method::GET,
+                    &format!("/v1/health/service/{service_name}"),
+                )
+                .query(&[("passing", "true")]),
             )
             .await?;
 
@@ -272,15 +307,14 @@ impl Discovery for ConsulDiscovery {
             .collect()
     }
 
-    async fn heartbeat(
-        &self,
-        service_name: &str,
-        instance_id: &str,
-    ) -> Result<(), DiscoveryError> {
+    async fn heartbeat(&self, service_name: &str, instance_id: &str) -> Result<(), DiscoveryError> {
         let check_id = format!("service:{instance_id}");
         debug!(service = %service_name, instance = %instance_id, check_id = %check_id, "sending consul heartbeat");
-        self.send_request(self.request(reqwest::Method::PUT, &format!("/v1/agent/check/pass/{check_id}")))
-            .await?;
+        self.send_request(self.request(
+            reqwest::Method::PUT,
+            &format!("/v1/agent/check/pass/{check_id}"),
+        ))
+        .await?;
         Ok(())
     }
 
@@ -289,12 +323,14 @@ impl Discovery for ConsulDiscovery {
         service_name: &str,
         instance_id: &str,
     ) -> Result<(), DiscoveryError> {
-        self.send_request(
-            self.request(reqwest::Method::PUT, &format!("/v1/agent/service/deregister/{instance_id}")),
-        )
+        self.send_request(self.request(
+            reqwest::Method::PUT,
+            &format!("/v1/agent/service/deregister/{instance_id}"),
+        ))
         .await?;
 
-        self.notify_watchers(service_name, self.current_instances(service_name).await?).await;
+        self.notify_watchers(service_name, self.current_instances(service_name).await?)
+            .await;
         Ok(())
     }
 
@@ -302,7 +338,10 @@ impl Discovery for ConsulDiscovery {
         let (tx, rx) = mpsc::channel(16);
         {
             let mut watchers = self.watchers.write().await;
-            watchers.entry(service_name.to_string()).or_default().push(tx.clone());
+            watchers
+                .entry(service_name.to_string())
+                .or_default()
+                .push(tx.clone());
         }
 
         let initial = self.discover(service_name).await?;
@@ -350,7 +389,8 @@ mod tests {
             if let Ok((mut socket, _)) = listener.accept().await {
                 let mut buf = [0u8; 1024];
                 let _ = socket.read(&mut buf).await;
-                let response = b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                let response =
+                    b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 let _ = socket.write_all(response).await;
                 let _ = socket.shutdown().await;
             }
