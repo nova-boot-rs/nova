@@ -65,18 +65,18 @@ Make services robust against failure and connect to storage.
 - [DONE] Document mapping with serde
 - [DONE] Index management
 
-### GraphDB Plugin (IN PROGRESS)
-- [IN PROGRESS] Neo4j/SurrealDB adapter (driver-backed runtime wiring pending)
+### GraphDB Plugin (DONE)
+- [DONE] Neo4j/SurrealDB adapter
 - [DONE] Cypher/GraphQL query builder
 - [DONE] Traversal helpers
 - [DONE] Graph-to-JSON serialization
 
-### Messaging (PLANNED)
-- [PLANNED] Kafka producer/consumer
-- [PLANNED] RabbitMQ adapter
-- [PLANNED] NATS pub/sub
-- [PLANNED] Event envelope standard
-- [PLANNED] Dead letter queue support
+### Messaging (IN PROGRESS)
+- [IN PROGRESS] Kafka producer/consumer (adapter scaffold ready; runtime client wiring pending)
+- [IN PROGRESS] RabbitMQ adapter (adapter scaffold ready; runtime client wiring pending)
+- [DONE] NATS pub/sub
+- [DONE] Event envelope standard
+- [DONE] Dead letter queue support
 
 ### Cross-Cutting Data (PLANNED)
 - [PLANNED] CQRS command/query separation helpers
