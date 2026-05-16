@@ -663,11 +663,10 @@ impl GraphStore for SurrealGraphStore {
         for row in edge_rows {
             if let Some(edges) = row.get("edges").and_then(JsonValue::as_array) {
                 for item in edges {
-                    if let Some(edge) = surreal_value_to_edge(item) {
-                        if let Some(node) = self.get_node(&edge.to).await? {
+                    if let Some(edge) = surreal_value_to_edge(item)
+                        && let Some(node) = self.get_node(&edge.to).await? {
                             out.push(node);
                         }
-                    }
                 }
             }
         }
