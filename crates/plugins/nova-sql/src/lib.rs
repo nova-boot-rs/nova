@@ -1,4 +1,4 @@
-use nova_core::{NovaPlugin, async_trait, axum::Extension, axum::Router};
+use nova_core::{NovaPlugin, async_trait, axum::Extension, axum::Router, axum::middleware};
 pub use sea_orm::{
     ConnectionTrait, Database, DatabaseConnection, DbBackend, EntityTrait, Schema, Statement,
 };
@@ -12,6 +12,15 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, RwLock};
+
+mod tenant;
+mod tenant_middleware;
+mod tenant_resolvers;
+mod tenant_scope;
+pub use tenant::*;
+pub use tenant_middleware::*;
+pub use tenant_resolvers::*;
+pub use tenant_scope::*;
 
 #[async_trait]
 trait SyncTask: Send + Sync {
@@ -35,6 +44,7 @@ pub struct NovaSql {
     sync_tasks: Vec<Box<dyn SyncTask>>,
     cache_store: Option<Arc<dyn QueryCacheStore>>,
     replicas: Arc<RwLock<Vec<DatabaseConnection>>>,
+    pub tenant_resolver: Option<Arc<dyn TenantResolver>>,
 }
 
 /// Optional pool configuration passed to `connect_with_options`.
@@ -134,6 +144,7 @@ impl NovaSql {
             sync_tasks: Vec::new(),
             cache_store: None,
             replicas: Arc::new(RwLock::new(Vec::new())),
+            tenant_resolver: None,
         }
     }
 
@@ -149,6 +160,7 @@ impl NovaSql {
             sync_tasks: Vec::new(),
             cache_store: None,
             replicas: Arc::new(RwLock::new(Vec::new())),
+            tenant_resolver: None,
         }
     }
 
@@ -362,6 +374,11 @@ impl NovaSql {
     pub fn read_write_pool(&self) -> ReadWritePool {
         ReadWritePool::new(self.db.clone(), self.replicas.clone())
     }
+
+    pub fn with_tenant_resolver(mut self, resolver: impl TenantResolver) -> Self {
+        self.tenant_resolver = Some(Arc::new(resolver));
+        self
+    }
 }
 
 /// Simple read/write pool with round-robin replica selection for reads.
@@ -419,10 +436,18 @@ impl NovaPlugin for NovaSql {
         }
     }
 
-    fn extend_router(&self, router: Router<()>) -> Router<()> {
+    fn extend_router(&self, mut router: Router<()>) -> Router<()> {
         // Inject a ReadWritePool extension for handlers to use read/write splitting.
         let pool = self.read_write_pool();
-        router.layer(Extension(pool))
+        router = router.layer(Extension(pool));
+
+        if let Some(resolver) = &self.tenant_resolver {
+            router = router.layer(middleware::from_fn_with_state(
+                Arc::clone(resolver),
+                tenant_middleware,
+            ));
+        }
+        router
     }
 }
 

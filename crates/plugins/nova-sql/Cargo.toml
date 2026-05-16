@@ -4,6 +4,9 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
+axum.workspace = true
+async-trait.workspace = true
+serde.workspace = true
 sea-orm = { workspace = true, features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 sea-orm-migration.workspace = true
 sea-query.workspace = true

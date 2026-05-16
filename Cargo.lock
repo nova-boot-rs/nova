@@ -1449,11 +1449,14 @@ dependencies = [
 name = "nova-sql"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "axum",
  "nova-core",
  "redis",
  "sea-orm",
  "sea-orm-migration",
  "sea-query",
+ "serde",
  "serde_json",
  "tokio",
 ]
