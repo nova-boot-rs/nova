@@ -398,16 +398,12 @@ mod tests {
     }
 
     struct SimpleCoordinator {
-        max_retries: u32,
         timeout_ms: u64,
     }
 
     impl SimpleCoordinator {
-        fn new(max_retries: u32, timeout_ms: u64) -> Self {
-            Self {
-                max_retries,
-                timeout_ms,
-            }
+        fn new(_max_retries: u32, timeout_ms: u64) -> Self {
+            Self { timeout_ms }
         }
 
         async fn run<S: Saga>(&self, saga: &S, input: S::Input) -> Result<(), SagaError>

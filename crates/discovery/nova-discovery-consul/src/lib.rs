@@ -9,6 +9,8 @@ use std::sync::Arc;
 use tokio::sync::{RwLock, mpsc};
 use tracing::{debug, warn};
 
+type WatchersMap = HashMap<String, Vec<mpsc::Sender<Vec<ServiceInstance>>>>;
+
 #[derive(Clone)]
 pub struct ConsulDiscovery {
     client: reqwest::Client,
@@ -16,7 +18,7 @@ pub struct ConsulDiscovery {
     datacenter: Option<String>,
     token: Option<String>,
     // Internal: tracks watch channels per service.
-    watchers: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<Vec<ServiceInstance>>>>>>,
+    watchers: Arc<RwLock<WatchersMap>>,
     watch_tasks: Arc<RwLock<HashMap<String, tokio::task::JoinHandle<()>>>>,
 }
 

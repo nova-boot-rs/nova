@@ -11,12 +11,14 @@ use tokio::sync::{RwLock, mpsc};
 use tokio::time::Duration;
 use tracing::warn;
 
+type WatchersMap = HashMap<String, Vec<mpsc::Sender<Vec<ServiceInstance>>>>;
+
 #[derive(Clone)]
 pub struct EtcdDiscovery {
     client: Client,
     prefix: String,
     lease_ttl: i64,
-    watchers: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<Vec<ServiceInstance>>>>>>,
+    watchers: Arc<RwLock<WatchersMap>>,
     watch_tasks: Arc<RwLock<HashMap<String, tokio::task::JoinHandle<()>>>>,
     leases: Arc<RwLock<HashMap<String, i64>>>,
 }
