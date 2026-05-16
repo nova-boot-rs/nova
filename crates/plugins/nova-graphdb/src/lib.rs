@@ -30,7 +30,11 @@ fn surreal_result_rows(json: &JsonValue) -> Vec<JsonValue> {
 
 fn parse_surreal_record_id(value: &JsonValue) -> Option<String> {
     if let Some(id) = value.as_str() {
-        return id.split(':').nth(1).map(ToString::to_string).or_else(|| Some(id.to_string()));
+        return id
+            .split(':')
+            .nth(1)
+            .map(ToString::to_string)
+            .or_else(|| Some(id.to_string()));
     }
 
     let obj = value.as_object()?;
@@ -38,9 +42,11 @@ fn parse_surreal_record_id(value: &JsonValue) -> Option<String> {
         return parse_surreal_record_id(inner_id);
     }
 
-    obj.get("tb")
-        .and_then(JsonValue::as_str)
-        .and_then(|tb| obj.get("id").and_then(JsonValue::as_str).map(|id| format!("{tb}:{id}")))
+    obj.get("tb").and_then(JsonValue::as_str).and_then(|tb| {
+        obj.get("id")
+            .and_then(JsonValue::as_str)
+            .map(|id| format!("{tb}:{id}"))
+    })
 }
 
 fn parse_surreal_rel_type(value: &JsonValue) -> Option<String> {
@@ -217,7 +223,9 @@ impl GraphStore for InMemoryGraphStore {
 
     async fn upsert_node(&self, node: GraphNode) -> Result<(), GraphDbError> {
         if node.id.is_empty() {
-            return Err(GraphDbError::InvalidInput("node id cannot be empty".to_string()));
+            return Err(GraphDbError::InvalidInput(
+                "node id cannot be empty".to_string(),
+            ));
         }
         self.nodes.write().await.insert(node.id.clone(), node);
         Ok(())
@@ -225,7 +233,9 @@ impl GraphStore for InMemoryGraphStore {
 
     async fn upsert_edge(&self, edge: GraphEdge) -> Result<(), GraphDbError> {
         if edge.id.is_empty() {
-            return Err(GraphDbError::InvalidInput("edge id cannot be empty".to_string()));
+            return Err(GraphDbError::InvalidInput(
+                "edge id cannot be empty".to_string(),
+            ));
         }
 
         let nodes = self.nodes.read().await;
@@ -323,7 +333,11 @@ impl Neo4jGraphStore {
         }
     }
 
-    async fn run_cypher(&self, statement: &str, parameters: JsonValue) -> Result<JsonValue, GraphDbError> {
+    async fn run_cypher(
+        &self,
+        statement: &str,
+        parameters: JsonValue,
+    ) -> Result<JsonValue, GraphDbError> {
         let endpoint = format!(
             "{}/db/{}/tx/commit",
             self.uri.trim_end_matches('/'),
@@ -357,8 +371,7 @@ impl Neo4jGraphStore {
         if !status.is_success() {
             return Err(GraphDbError::Backend(format!(
                 "neo4j http status {}: {}",
-                status,
-                json
+                status, json
             )));
         }
 
@@ -369,7 +382,9 @@ impl Neo4jGraphStore {
             .unwrap_or_default();
 
         if !errors.is_empty() {
-            return Err(GraphDbError::Backend(format!("neo4j query error: {errors:?}")));
+            return Err(GraphDbError::Backend(format!(
+                "neo4j query error: {errors:?}"
+            )));
         }
 
         Ok(json)
@@ -438,7 +453,8 @@ impl GraphStore for Neo4jGraphStore {
     }
 
     async fn get_node(&self, node_id: &str) -> Result<Option<GraphNode>, GraphDbError> {
-        let cypher = "MATCH (n {id: $id}) RETURN {id: n.id, labels: labels(n), properties: properties(n)}";
+        let cypher =
+            "MATCH (n {id: $id}) RETURN {id: n.id, labels: labels(n), properties: properties(n)}";
         let response = self
             .run_cypher(cypher, serde_json::json!({ "id": node_id }))
             .await?;
@@ -577,8 +593,7 @@ impl SurrealGraphStore {
         if !status.is_success() {
             return Err(GraphDbError::Backend(format!(
                 "surrealdb http status {}: {}",
-                status,
-                json
+                status, json
             )));
         }
 
@@ -835,7 +850,10 @@ impl GraphQlQueryBuilder {
             self.fields.join(" ")
         };
 
-        GraphQuery::GraphQl(format!("query {{ {}{} {{ {} }} }}", self.root, args, fields))
+        GraphQuery::GraphQl(format!(
+            "query {{ {}{} {{ {} }} }}",
+            self.root, args, fields
+        ))
     }
 }
 
@@ -857,7 +875,11 @@ impl NovaGraphDb {
         Self::new(Arc::new(InMemoryGraphStore::default()))
     }
 
-    pub fn neo4j(uri: impl Into<String>, user: impl Into<String>, password: impl Into<String>) -> Self {
+    pub fn neo4j(
+        uri: impl Into<String>,
+        user: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Self {
         Self::new(Arc::new(Neo4jGraphStore::new(uri, user, password)))
     }
 
@@ -866,7 +888,9 @@ impl NovaGraphDb {
         namespace: impl Into<String>,
         database: impl Into<String>,
     ) -> Self {
-        Self::new(Arc::new(SurrealGraphStore::new(endpoint, namespace, database)))
+        Self::new(Arc::new(SurrealGraphStore::new(
+            endpoint, namespace, database,
+        )))
     }
 
     pub async fn execute(&self, query: GraphQuery) -> Result<JsonValue, GraphDbError> {
@@ -881,7 +905,11 @@ impl NovaGraphDb {
         self.store.upsert_edge(edge).await
     }
 
-    pub async fn traverse_json(&self, start: &str, max_depth: usize) -> Result<JsonValue, GraphDbError> {
+    pub async fn traverse_json(
+        &self,
+        start: &str,
+        max_depth: usize,
+    ) -> Result<JsonValue, GraphDbError> {
         let graph = self.store.traverse(start, max_depth).await?;
         graph_to_json(&graph)
     }
@@ -928,9 +956,18 @@ mod tests {
     async fn traversal_helpers_work_for_in_memory_graph() {
         let graph = NovaGraphDb::in_memory();
 
-        graph.upsert_node(node("u1", "User")).await.expect("insert node u1");
-        graph.upsert_node(node("u2", "User")).await.expect("insert node u2");
-        graph.upsert_node(node("u3", "User")).await.expect("insert node u3");
+        graph
+            .upsert_node(node("u1", "User"))
+            .await
+            .expect("insert node u1");
+        graph
+            .upsert_node(node("u2", "User"))
+            .await
+            .expect("insert node u2");
+        graph
+            .upsert_node(node("u3", "User"))
+            .await
+            .expect("insert node u3");
         graph
             .upsert_edge(edge("e1", "u1", "u2", "FOLLOWS"))
             .await
@@ -945,8 +982,14 @@ mod tests {
             .await
             .expect("traversal should serialize");
 
-        let nodes = json.get("nodes").and_then(JsonValue::as_array).expect("nodes array");
-        let edges = json.get("edges").and_then(JsonValue::as_array).expect("edges array");
+        let nodes = json
+            .get("nodes")
+            .and_then(JsonValue::as_array)
+            .expect("nodes array");
+        let edges = json
+            .get("edges")
+            .and_then(JsonValue::as_array)
+            .expect("edges array");
 
         assert_eq!(nodes.len(), 3);
         assert_eq!(edges.len(), 2);
@@ -990,13 +1033,18 @@ mod tests {
                 properties: HashMap::new(),
             })
             .await;
-        assert!(matches!(missing_endpoints, Err(GraphDbError::InvalidInput(_))));
+        assert!(matches!(
+            missing_endpoints,
+            Err(GraphDbError::InvalidInput(_))
+        ));
     }
 
     #[tokio::test]
     async fn in_memory_execute_is_not_implemented() {
         let store = InMemoryGraphStore::default();
-        let result = store.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
+        let result = store
+            .execute(GraphQuery::Cypher("RETURN 1".to_string()))
+            .await;
         assert!(matches!(result, Err(GraphDbError::NotImplemented(_))));
     }
 
@@ -1008,7 +1056,10 @@ mod tests {
             .return_fields("n")
             .build();
 
-        assert_eq!(q, GraphQuery::Cypher("MATCH (n:User) WHERE n.id = 'u1' RETURN n".to_string()));
+        assert_eq!(
+            q,
+            GraphQuery::Cypher("MATCH (n:User) WHERE n.id = 'u1' RETURN n".to_string())
+        );
     }
 
     #[test]
@@ -1028,7 +1079,9 @@ mod tests {
     #[tokio::test]
     async fn neo4j_adapter_is_constructible() {
         let graph = NovaGraphDb::neo4j("http://127.0.0.1:65535", "neo4j", "pass");
-        let result = graph.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
+        let result = graph
+            .execute(GraphQuery::Cypher("RETURN 1".to_string()))
+            .await;
         assert!(matches!(result, Err(GraphDbError::Backend(_))));
     }
 

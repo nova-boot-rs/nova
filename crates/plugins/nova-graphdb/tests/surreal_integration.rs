@@ -29,13 +29,19 @@ async fn surreal_end_to_end_traversal() {
     let node1 = GraphNode {
         id: n1.clone(),
         labels: vec!["node".to_string()],
-        properties: HashMap::from([("email".to_string(), JsonValue::String("u1@nova.rs".to_string()))]),
+        properties: HashMap::from([(
+            "email".to_string(),
+            JsonValue::String("u1@nova.rs".to_string()),
+        )]),
     };
 
     let node2 = GraphNode {
         id: n2.clone(),
         labels: vec!["node".to_string()],
-        properties: HashMap::from([("email".to_string(), JsonValue::String("u2@nova.rs".to_string()))]),
+        properties: HashMap::from([(
+            "email".to_string(),
+            JsonValue::String("u2@nova.rs".to_string()),
+        )]),
     };
 
     graph
@@ -75,16 +81,22 @@ async fn surreal_end_to_end_traversal() {
         .expect("edges array in traversal response");
 
     assert!(
-        nodes.iter().any(|n| n.get("id") == Some(&JsonValue::String(n1.clone()))),
+        nodes
+            .iter()
+            .any(|n| n.get("id") == Some(&JsonValue::String(n1.clone()))),
         "expected traversal to contain start node"
     );
     assert!(
-        nodes.iter().any(|n| n.get("id") == Some(&JsonValue::String(n2.clone()))),
+        nodes
+            .iter()
+            .any(|n| n.get("id") == Some(&JsonValue::String(n2.clone()))),
         "expected traversal to contain neighbor node"
     );
     assert!(
-        edges.iter().any(|e| e.get("from") == Some(&JsonValue::String(n1.clone()))
-            && e.get("to") == Some(&JsonValue::String(n2.clone()))),
+        edges
+            .iter()
+            .any(|e| e.get("from") == Some(&JsonValue::String(n1.clone()))
+                && e.get("to") == Some(&JsonValue::String(n2.clone()))),
         "expected traversal to contain connecting edge"
     );
 }
