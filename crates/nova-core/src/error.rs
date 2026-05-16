@@ -67,6 +67,26 @@ impl fmt::Display for NovaError {
 
 impl std::error::Error for NovaError {}
 
+/// Discovery subsystem errors.
+#[derive(Debug, Clone)]
+pub enum DiscoveryError {
+    NotFound(String),
+    Backend(String),
+    ConnectionFailed(String),
+}
+
+impl fmt::Display for DiscoveryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NotFound(msg) => write!(f, "Discovery not found: {}", msg),
+            Self::Backend(msg) => write!(f, "Discovery backend error: {}", msg),
+            Self::ConnectionFailed(msg) => write!(f, "Discovery connection failed: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for DiscoveryError {}
+
 impl NovaError {
     /// Get the HTTP status code for this error
     pub fn status_code(&self) -> StatusCode {

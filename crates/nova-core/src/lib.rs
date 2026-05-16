@@ -15,8 +15,11 @@ pub use config::{
     NovaSecretSource, ReloadableConfig, spawn_json_file_hot_reloader,
 };
 pub use error::{ErrorResponse, NovaError, NovaResult};
+pub mod discovery;
+
+pub use discovery::{Discovery, InstanceStatus, ServiceInstance};
+pub use error::DiscoveryError;
 // Observability is implemented by an optional plugin crate (nova-observability).
-pub use nova_resilience_store as discovery;
 pub use nova_resilience_store::ResilienceStore;
 #[cfg(feature = "redis-store")]
 pub use nova_resilience_store::redis_store::RedisStore;

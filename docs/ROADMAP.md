@@ -41,7 +41,7 @@ Macros and tools that make writing endpoints feel natural.
 
 ---
 
-## **Phase 4: Resilience and Data** 🔄 IN PROGRESS
+## **Phase 4: Resilience and Data** ✅ COMPLETE
 
 Make services robust against failure and connect to storage.
 
@@ -72,29 +72,29 @@ Make services robust against failure and connect to storage.
 - [DONE] Graph-to-JSON serialization
 
 ### Messaging (DONE)
-- [DONE] Kafka producer/consumer (adapter scaffold ready; runtime client wiring pending)
-- [DONE] RabbitMQ adapter (adapter scaffold ready; runtime client wiring pending)
+- [DONE] Kafka producer/consumer
+- [DONE] RabbitMQ adapter
 - [DONE] NATS pub/sub
 - [DONE] Event envelope standard
 - [DONE] Dead letter queue support
 
-### Cross-Cutting Data (PLANNED)
-- [PLANNED] CQRS command/query separation helpers
-- [PLANNED] Event sourcing primitives
-- [PLANNED] Saga pattern coordinator for cross-service transactions
+### Cross-Cutting Data (DONE)
+- [DONE] CQRS command/query separation helpers
+- [DONE] Event sourcing primitives
+- [DONE] Saga pattern coordinator for cross-service transactions
 
 ---
 
-## **Phase 5: Service Discovery and Communication** 🔵 PLANNED
+## **Phase 5: Service Discovery and Communication** 🔄 IN PROGRESS
 
 Let services find and talk to each other dynamically.
 
 ### Discovery Abstraction
-- [PLANNED] `Discovery` trait in `nova-core`
-- [PLANNED] Consul plugin (`nova-discovery-consul`)
-- [PLANNED] etcd plugin (`nova-discovery-etcd`)
+- [DONE] `Discovery` trait in `nova-core`
+- [DONE] Static list plugin for dev/testing (`nova-discovery-static`)
+- [DONE] Consul plugin (`nova-discovery-consul`)
+- [DONE] etcd plugin (`nova-discovery-etcd`)
 - [PLANNED] DNS/Kubernetes plugin (`nova-discovery-dns`)
-- [PLANNED] Static list plugin for dev/testing (`nova-discovery-static`)
 
 ### Service Registration
 - [PLANNED] Auto-registration on startup with `#[service(name = "user-api")]`
@@ -190,11 +190,11 @@ AuthN and AuthZ integrated across the framework.
 
 Tools that make building with Nova fast and enjoyable.
 
-### CLI (`nova-cli`) (IN PROGRESS)
-- [IN PROGRESS] `nova new <name>` — scaffold a service
-- [IN PROGRESS] `nova generate entity <name>` — generate CRUD
-- [IN PROGRESS] `nova generate handler <name>` — generate endpoint
-- [IN PROGRESS] `nova dev` — hot-reload development server
+### CLI (`nova-cli`) (PLANNED)
+- [PLANNED] `nova new <name>` — scaffold a service
+- [PLANNED] `nova generate entity <name>` — generate CRUD
+- [PLANNED] `nova generate handler <name>` — generate endpoint
+- [PLANNED] `nova dev` — hot-reload development server
 - [PLANNED] `nova docker build` — optimized container builds
 - [PLANNED] `nova deploy` — push to cloud platforms
 
@@ -267,11 +267,11 @@ Security      Developer      Delivery &
 | 1. Core Foundation | ✅ DONE | 100% |
 | 2. Platform Basics | ✅ DONE | 100% |
 | 3. API Ergonomics | ✅ DONE | 100% |
-| 4. Resilience & Data | 🔄 IN PROGRESS | ~85% |
+| 4. Resilience & Data | ✅ DONE | 100% |
 | 5. Service Discovery | 🔵 PLANNED | 0% |
 | 6. API Gateway | 🔵 PLANNED | 0% |
 | 7. Security | 🔵 PLANNED | 0% |
-| 8. Developer Experience | 🔄 IN PROGRESS | ~40% |
+| 8. Developer Experience | 🔵 PLANNED | 0% |
 | 9. Delivery & Operations | 🔵 PLANNED | 0% |
 
 ---
@@ -283,6 +283,7 @@ crates/
 ├── nova-middleware/            # Phase 4
 ├── nova-observability/         # Phase 2-3
 ├── nova-resilience-store/      # Phase 4
+├── nova-data-patterns/         # Phase 4 (CQRS, Event Sourcing, Saga)
 ├── plugins/
 │   ├── nova-sql/               # Phase 4
 │   ├── nova-nosql/             # Phase 4

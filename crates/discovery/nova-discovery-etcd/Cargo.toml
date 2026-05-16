@@ -4,3 +4,10 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
+async-trait = { workspace = true }
+etcd-client = { workspace = true }
+nova-core = { path = "../../nova-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
