@@ -2471,6 +2471,18 @@ dependencies = [
 [[package]]
 name = "nova-data-patterns"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "nova-core",
+ "nova-messaging",
+ "nova-nosql",
+ "nova-sql",
+ "redis",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "nova-discovery"
