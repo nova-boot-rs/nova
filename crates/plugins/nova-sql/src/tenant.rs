@@ -76,7 +76,11 @@ impl StaticTenantColumnResolver {
         self
     }
 
-    pub fn with_table_column(mut self, table: impl Into<String>, column: impl Into<String>) -> Self {
+    pub fn with_table_column(
+        mut self,
+        table: impl Into<String>,
+        column: impl Into<String>,
+    ) -> Self {
         self.per_table.insert(table.into(), column.into());
         self
     }

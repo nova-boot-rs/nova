@@ -1,6 +1,4 @@
-use super::tenant::{
-    StaticTenantColumnResolver, Tenant, TenantColumnError, TenantColumnResolver,
-};
+use super::tenant::{StaticTenantColumnResolver, Tenant, TenantColumnError, TenantColumnResolver};
 use sea_orm::DatabaseConnection;
 use sea_query::{Alias, DeleteStatement, Expr, SelectStatement, UpdateStatement};
 use std::sync::Arc;
@@ -41,11 +39,11 @@ impl TenantScope {
 
     /// Return the resolved tenant column for a table.
     pub fn tenant_column_for_table(&self, table: &str) -> Result<&str, TenantColumnError> {
-        self.resolver
-            .tenant_column_for_table(table)
-            .ok_or_else(|| TenantColumnError::MissingTenantColumn {
+        self.resolver.tenant_column_for_table(table).ok_or_else(|| {
+            TenantColumnError::MissingTenantColumn {
                 table: table.to_string(),
-            })
+            }
+        })
     }
 
     /// Apply tenant where-clause to a select statement.
@@ -108,29 +106,43 @@ mod tests {
 
     #[tokio::test]
     async fn default_tenant_column_is_used() {
-        let db = Database::connect("sqlite::memory:").await.expect("db connect");
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("db connect");
         let scope = TenantScope::new(db, Tenant::new("t-1"));
 
-        let column = scope.tenant_column_for_table("users").expect("column should exist");
+        let column = scope
+            .tenant_column_for_table("users")
+            .expect("column should exist");
         assert_eq!(column, "tenant_id");
     }
 
     #[tokio::test]
     async fn custom_resolver_overrides_column_per_table() {
-        let db = Database::connect("sqlite::memory:").await.expect("db connect");
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("db connect");
         let resolver = StaticTenantColumnResolver::new()
             .with_default_column("tenant_id")
             .with_table_column("users", "org_id");
 
         let scope = TenantScope::with_resolver(db, Tenant::new("t-1"), Arc::new(resolver));
 
-        assert_eq!(scope.tenant_column_for_table("users").unwrap_or(""), "org_id");
-        assert_eq!(scope.tenant_column_for_table("orders").unwrap_or(""), "tenant_id");
+        assert_eq!(
+            scope.tenant_column_for_table("users").unwrap_or(""),
+            "org_id"
+        );
+        assert_eq!(
+            scope.tenant_column_for_table("orders").unwrap_or(""),
+            "tenant_id"
+        );
     }
 
     #[tokio::test]
     async fn strict_resolver_errors_for_missing_table_mapping() {
-        let db = Database::connect("sqlite::memory:").await.expect("db connect");
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("db connect");
         let resolver = StaticTenantColumnResolver::new().with_table_column("users", "org_id");
         let scope = TenantScope::with_resolver(db, Tenant::new("t-1"), Arc::new(resolver));
 
@@ -148,7 +160,9 @@ mod tests {
 
     #[tokio::test]
     async fn select_scope_injects_tenant_filter() {
-        let db = Database::connect("sqlite::memory:").await.expect("db connect");
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("db connect");
         let scope = TenantScope::new(db, Tenant::new("tenant-42"));
 
         let mut stmt = Query::select();
@@ -166,14 +180,19 @@ mod tests {
 
     #[tokio::test]
     async fn tenant_match_guard_detects_mismatch() {
-        let db = Database::connect("sqlite::memory:").await.expect("db connect");
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("db connect");
         let scope = TenantScope::new(db, Tenant::new("tenant-1"));
 
         let ok = scope.ensure_tenant_match(Some("tenant-1"));
         assert!(ok.is_ok());
 
         let mismatch = scope.ensure_tenant_match(Some("tenant-2"));
-        assert!(matches!(mismatch, Err(TenantColumnError::TenantMismatch { .. })));
+        assert!(matches!(
+            mismatch,
+            Err(TenantColumnError::TenantMismatch { .. })
+        ));
 
         let missing = scope.ensure_tenant_match(None);
         assert!(matches!(missing, Err(TenantColumnError::MissingTenant)));

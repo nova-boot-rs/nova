@@ -113,7 +113,10 @@ impl DocumentStore for InMemoryDocumentStore {
 
     async fn create_index(&self, collection: &str, index: NoSqlIndex) -> Result<(), NoSqlError> {
         let mut indexes = self.indexes.write().await;
-        indexes.entry(collection.to_string()).or_default().push(index);
+        indexes
+            .entry(collection.to_string())
+            .or_default()
+            .push(index);
         Ok(())
     }
 
@@ -170,7 +173,8 @@ impl DocumentStore for RedisDocumentStore {
     async fn upsert(&self, collection: &str, id: &str, doc: JsonValue) -> Result<(), NoSqlError> {
         let mut conn = self.conn.lock().await;
         let key = self.key(collection, id);
-        let json = serde_json::to_string(&doc).map_err(|e| NoSqlError::Serialization(e.to_string()))?;
+        let json =
+            serde_json::to_string(&doc).map_err(|e| NoSqlError::Serialization(e.to_string()))?;
 
         redis::Cmd::set(&key, json)
             .query_async::<_, ()>(&mut *conn)
@@ -189,7 +193,10 @@ impl DocumentStore for RedisDocumentStore {
 
     async fn create_index(&self, collection: &str, index: NoSqlIndex) -> Result<(), NoSqlError> {
         let mut indexes = self.indexes.write().await;
-        indexes.entry(collection.to_string()).or_default().push(index);
+        indexes
+            .entry(collection.to_string())
+            .or_default()
+            .push(index);
         Ok(())
     }
 
@@ -354,7 +361,10 @@ impl NovaNoSql {
         }
     }
 
-    pub async fn redis_primary(url: &str, namespace: impl Into<String>) -> Result<Self, NoSqlError> {
+    pub async fn redis_primary(
+        url: &str,
+        namespace: impl Into<String>,
+    ) -> Result<Self, NoSqlError> {
         let store = RedisDocumentStore::new(url, namespace).await?;
         Ok(Self::new(Arc::new(store)))
     }
@@ -369,7 +379,11 @@ impl NovaNoSql {
         self
     }
 
-    pub async fn get<T: DeserializeOwned>(&self, collection: &str, id: &str) -> Result<Option<T>, NoSqlError> {
+    pub async fn get<T: DeserializeOwned>(
+        &self,
+        collection: &str,
+        id: &str,
+    ) -> Result<Option<T>, NoSqlError> {
         if let Some(cache) = &self.cache {
             let key = format!("nosql:{collection}:{id}");
             if let Some(raw) = cache.get(&key).await {
@@ -393,7 +407,12 @@ impl NovaNoSql {
         }
     }
 
-    pub async fn upsert<T: Serialize>(&self, collection: &str, id: &str, value: &T) -> Result<(), NoSqlError> {
+    pub async fn upsert<T: Serialize>(
+        &self,
+        collection: &str,
+        id: &str,
+        value: &T,
+    ) -> Result<(), NoSqlError> {
         let doc = SerdeDocumentMapper::to_value(value)?;
         self.primary.upsert(collection, id, doc.clone()).await?;
 
@@ -415,7 +434,11 @@ impl NovaNoSql {
         Ok(())
     }
 
-    pub async fn create_index(&self, collection: &str, index: NoSqlIndex) -> Result<(), NoSqlError> {
+    pub async fn create_index(
+        &self,
+        collection: &str,
+        index: NoSqlIndex,
+    ) -> Result<(), NoSqlError> {
         self.primary.create_index(collection, index).await
     }
 
@@ -471,7 +494,9 @@ mod tests {
     #[async_trait::async_trait]
     impl DocumentStore for FailingStore {
         async fn get(&self, _collection: &str, _id: &str) -> Result<Option<JsonValue>, NoSqlError> {
-            Err(NoSqlError::Backend("primary should not be called".to_string()))
+            Err(NoSqlError::Backend(
+                "primary should not be called".to_string(),
+            ))
         }
 
         async fn upsert(
@@ -516,7 +541,10 @@ mod tests {
             email: "a@nova.rs".to_string(),
         };
 
-        nosql.upsert("users", &user.id, &user).await.expect("upsert ok");
+        nosql
+            .upsert("users", &user.id, &user)
+            .await
+            .expect("upsert ok");
         let loaded: Option<UserDoc> = nosql.get("users", "u-1").await.expect("get ok");
         assert_eq!(loaded, Some(user));
     }
@@ -560,7 +588,10 @@ mod tests {
             .await;
 
         let nosql = NovaNoSql::new(Arc::new(FailingStore)).with_cache(cache);
-        let loaded: Option<UserDoc> = nosql.get("users", "u-1").await.expect("cache hit should succeed");
+        let loaded: Option<UserDoc> = nosql
+            .get("users", "u-1")
+            .await
+            .expect("cache hit should succeed");
 
         assert_eq!(loaded.map(|u| u.email), Some("cached@nova.rs".to_string()));
     }
