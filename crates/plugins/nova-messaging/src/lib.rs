@@ -86,15 +86,22 @@ impl EventEnvelope {
 #[async_trait]
 pub trait MessageBroker: Send + Sync {
     async fn publish(&self, envelope: EventEnvelope) -> Result<(), MessagingError>;
-    async fn poll(&self, topic: &str, max_messages: usize) -> Result<Vec<EventEnvelope>, MessagingError>;
+    async fn poll(
+        &self,
+        topic: &str,
+        max_messages: usize,
+    ) -> Result<Vec<EventEnvelope>, MessagingError>;
     async fn publish_dlq(
         &self,
         source_topic: &str,
         envelope: EventEnvelope,
         reason: &str,
     ) -> Result<(), MessagingError>;
-    async fn poll_dlq(&self, source_topic: &str, max_messages: usize)
-        -> Result<Vec<EventEnvelope>, MessagingError>;
+    async fn poll_dlq(
+        &self,
+        source_topic: &str,
+        max_messages: usize,
+    ) -> Result<Vec<EventEnvelope>, MessagingError>;
 }
 
 #[derive(Default)]
@@ -112,7 +119,11 @@ impl MessageBroker for InMemoryBroker {
         Ok(())
     }
 
-    async fn poll(&self, topic: &str, max_messages: usize) -> Result<Vec<EventEnvelope>, MessagingError> {
+    async fn poll(
+        &self,
+        topic: &str,
+        max_messages: usize,
+    ) -> Result<Vec<EventEnvelope>, MessagingError> {
         let mut queues = self.queues.write().await;
         let queue = queues.entry(topic.to_string()).or_default();
 
@@ -322,7 +333,9 @@ impl MessageBroker for NatsBroker {
 
         let mut out = Vec::new();
         for _ in 0..max_messages {
-            match tokio::time::timeout(Duration::from_millis(self.poll_timeout_ms), sub.next()).await {
+            match tokio::time::timeout(Duration::from_millis(self.poll_timeout_ms), sub.next())
+                .await
+            {
                 Ok(Some(message)) => {
                     let env = serde_json::from_slice::<EventEnvelope>(message.payload.as_ref())
                         .map_err(|e| MessagingError::Serialization(e.to_string()))?;
@@ -344,7 +357,9 @@ impl MessageBroker for NatsBroker {
     ) -> Result<(), MessagingError> {
         envelope.attempts = envelope.attempts.saturating_add(1);
         envelope.topic = Self::dlq_topic(source_topic);
-        envelope.headers.insert("x-dlq-reason".to_string(), reason.to_string());
+        envelope
+            .headers
+            .insert("x-dlq-reason".to_string(), reason.to_string());
         envelope
             .headers
             .insert("x-source-topic".to_string(), source_topic.to_string());
@@ -357,7 +372,8 @@ impl MessageBroker for NatsBroker {
         source_topic: &str,
         max_messages: usize,
     ) -> Result<Vec<EventEnvelope>, MessagingError> {
-        self.poll(&Self::dlq_topic(source_topic), max_messages).await
+        self.poll(&Self::dlq_topic(source_topic), max_messages)
+            .await
     }
 }
 
@@ -404,7 +420,11 @@ impl NovaMessaging {
         self.broker.publish(envelope).await
     }
 
-    pub async fn poll(&self, topic: &str, max_messages: usize) -> Result<Vec<EventEnvelope>, MessagingError> {
+    pub async fn poll(
+        &self,
+        topic: &str,
+        max_messages: usize,
+    ) -> Result<Vec<EventEnvelope>, MessagingError> {
         self.broker.poll(topic, max_messages).await
     }
 
@@ -460,7 +480,9 @@ impl NovaMessaging {
         envelope: EventEnvelope,
         reason: &str,
     ) -> Result<(), MessagingError> {
-        self.broker.publish_dlq(source_topic, envelope, reason).await
+        self.broker
+            .publish_dlq(source_topic, envelope, reason)
+            .await
     }
 }
 
@@ -551,8 +573,14 @@ mod tests {
             .await
             .expect("dlq poll should succeed");
         assert_eq!(dlq.len(), 1);
-        assert_eq!(dlq[0].headers.get("x-source-topic"), Some(&"users".to_string()));
-        assert_eq!(dlq[0].headers.get("x-dlq-reason"), Some(&"handler error: boom".to_string()));
+        assert_eq!(
+            dlq[0].headers.get("x-source-topic"),
+            Some(&"users".to_string())
+        );
+        assert_eq!(
+            dlq[0].headers.get("x-dlq-reason"),
+            Some(&"handler error: boom".to_string())
+        );
         assert_eq!(dlq[0].attempts, 1);
     }
 

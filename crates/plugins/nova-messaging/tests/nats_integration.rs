@@ -32,8 +32,14 @@ async fn nats_publish_poll_and_dlq_roundtrip() {
         .await
         .expect("publish should succeed");
 
-    let messages = messaging.poll(&topic, 10).await.expect("poll should succeed");
-    assert!(!messages.is_empty(), "expected at least one message from NATS subject");
+    let messages = messaging
+        .poll(&topic, 10)
+        .await
+        .expect("poll should succeed");
+    assert!(
+        !messages.is_empty(),
+        "expected at least one message from NATS subject"
+    );
 
     messaging
         .publish_to_dlq(&dlq_source, envelope, "handler failed")
