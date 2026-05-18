@@ -251,7 +251,7 @@ impl MessageBroker for KafkaBroker {
                 let c: StreamConsumer = ClientConfig::new()
                     .set("bootstrap.servers", &self.brokers)
                     .set("group.id", format!("{}-{}", self.client_id, topic))
-                    .set("auto.offset.reset", "latest")
+                    .set("auto.offset.reset", "earliest")
                     .set("enable.auto.commit", "true")
                     .set("session.timeout.ms", "6000")
                     .create()
