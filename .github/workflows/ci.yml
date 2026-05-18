@@ -71,16 +71,6 @@ jobs:
                 --health-timeout 10s
                 --health-retries 12
 
-            surrealdb:
-              image: surrealdb/surrealdb:latest
-              ports:
-                - 8000:8000
-              options: >-
-                --health-cmd "wget -q -O- http://localhost:8000/health >/dev/null"
-                --health-interval 10s
-                --health-timeout 5s
-                --health-retries 12
-
             mongodb:
               image: mongo:7
               ports:
@@ -141,6 +131,23 @@ jobs:
                 NEO4J_USER: neo4j
                 NEO4J_PASSWORD: nova-test-password
               run: cargo test -p nova-graphdb --test neo4j_integration
+
+            - name: Start SurrealDB
+              run: |
+                docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest \
+                  start --bind 0.0.0.0:8000 memory
+
+                for i in {1..30}; do
+                  if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+                    echo "SurrealDB is ready"
+                    exit 0
+                  fi
+                  sleep 2
+                done
+
+                echo "SurrealDB did not become ready in time"
+                docker logs surrealdb
+                exit 1
 
             - name: SurrealDB integration tests
               env:
