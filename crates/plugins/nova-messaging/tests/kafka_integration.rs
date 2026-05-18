@@ -1,4 +1,5 @@
 use nova_messaging::{EventEnvelope, NovaMessaging};
+use std::time::Duration;
 
 #[tokio::test]
 async fn kafka_publish_poll_and_dlq_roundtrip() {
@@ -30,12 +31,19 @@ async fn kafka_publish_poll_and_dlq_roundtrip() {
         .await
         .expect("publish should succeed");
 
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    // Retry polling for a short period to account for broker delivery latency
+    let mut messages = Vec::new();
+    for _ in 0..10 {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        messages = messaging
+            .poll(&topic, 10)
+            .await
+            .expect("poll should succeed");
+        if !messages.is_empty() {
+            break;
+        }
+    }
 
-    let messages = messaging
-        .poll(&topic, 10)
-        .await
-        .expect("poll should succeed");
     assert!(
         !messages.is_empty(),
         "expected at least one message from Kafka topic"
@@ -47,12 +55,17 @@ async fn kafka_publish_poll_and_dlq_roundtrip() {
         .await
         .expect("publish dlq should succeed");
 
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-    let dlq = messaging
-        .poll_dlq(&dlq_source, 10)
-        .await
-        .expect("dlq poll should succeed");
+    let mut dlq = Vec::new();
+    for _ in 0..10 {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        dlq = messaging
+            .poll_dlq(&dlq_source, 10)
+            .await
+            .expect("dlq poll should succeed");
+        if !dlq.is_empty() {
+            break;
+        }
+    }
 
     assert!(!dlq.is_empty(), "expected at least one dlq message");
     assert_eq!(dlq[0].headers.get("x-source-topic"), Some(&dlq_source));

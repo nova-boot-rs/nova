@@ -112,6 +112,26 @@ More detail is available in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [do
 - [Architecture](docs/ARCHITECTURE.md)
 - [Error Handling](docs/ERROR_HANDLING.md)
 
+## Prerequisites for Optional Plugins
+
+Some optional plugins (for example the `nova-discovery-etcd` crate) depend on native tooling to build their dependencies.
+
+- `protoc` (Protocol Buffers compiler): required by the `etcd-client` dependency when building the etcd discovery plugin. If `protoc` is not available you may see an error like "Could not find `protoc`" during `cargo build` or `cargo test`.
+
+Install `protoc` on Debian/Ubuntu with:
+
+```bash
+sudo apt-get update && sudo apt-get install -y protobuf-compiler
+```
+
+Or download a release from https://github.com/protocolbuffers/protobuf/releases and set the `PROTOC` environment variable to the `protoc` binary path if you prefer a custom location.
+
+If you don't need to build the etcd plugin locally, run tests excluding that crate:
+
+```bash
+cargo test -p nova-discovery-static -p nova-discovery-consul
+```
+
 ## Notes
 
 - The demo uses SQLite through SeaORM.
