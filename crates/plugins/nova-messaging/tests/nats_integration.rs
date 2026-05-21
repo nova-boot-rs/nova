@@ -1,4 +1,5 @@
 use nova_messaging::{EventEnvelope, NovaMessaging};
+use std::time::Duration;
 
 #[tokio::test]
 async fn nats_publish_poll_and_dlq_roundtrip() {
@@ -46,10 +47,17 @@ async fn nats_publish_poll_and_dlq_roundtrip() {
         .await
         .expect("publish dlq should succeed");
 
-    let dlq = messaging
-        .poll_dlq(&dlq_source, 10)
-        .await
-        .expect("dlq poll should succeed");
+    let mut dlq = Vec::new();
+    for _ in 0..10 {
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        dlq = messaging
+            .poll_dlq(&dlq_source, 10)
+            .await
+            .expect("dlq poll should succeed");
+        if !dlq.is_empty() {
+            break;
+        }
+    }
 
     assert!(!dlq.is_empty(), "expected at least one dlq message");
     assert_eq!(dlq[0].headers.get("x-source-topic"), Some(&dlq_source));
