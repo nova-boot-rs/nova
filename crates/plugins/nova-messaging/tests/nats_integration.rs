@@ -47,6 +47,12 @@ async fn nats_publish_poll_and_dlq_roundtrip() {
         .await
         .expect("publish dlq should succeed");
 
+    // Prime the DLQ subscription before we expect to read the published message.
+    let _ = messaging
+        .poll_dlq(&dlq_source, 1)
+        .await
+        .expect("initial dlq poll should succeed");
+
     let mut dlq = Vec::new();
     for _ in 0..10 {
         tokio::time::sleep(Duration::from_millis(200)).await;
