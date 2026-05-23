@@ -35,6 +35,15 @@ async fn redis_store_basic_flow() {
     let got2 = store.get_i64(&key).await.expect("get after set_ex");
     assert_eq!(got2, Some(42));
 
+    let script = r#"
+        return tonumber(ARGV[1]) + tonumber(ARGV[2])
+    "#;
+    let result = store
+        .eval_lua(script, &[], &["3", "4"])
+        .await
+        .expect("eval lua");
+    assert_eq!(result.as_i64(), Some(7));
+
     // cleanup
     store.del(&key).await.expect("del");
 }
