@@ -135,7 +135,7 @@ jobs:
             - name: Start SurrealDB
               run: |
                 docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest \
-                  start --bind 0.0.0.0:8000 memory
+                  start --bind 0.0.0.0:8000 --user root --pass root memory
 
                 for i in {1..30}; do
                   if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
