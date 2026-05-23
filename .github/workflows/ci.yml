@@ -154,6 +154,8 @@ jobs:
                 SURREALDB_URL: http://127.0.0.1:8000
                 SURREALDB_NS: nova
                 SURREALDB_DB: main
+                SURREALDB_USER: root
+                SURREALDB_PASSWORD: root
               run: cargo test -p nova-graphdb --test surreal_integration
 
             - name: SQL replica integration tests

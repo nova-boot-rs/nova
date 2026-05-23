@@ -15,8 +15,10 @@ async fn surreal_end_to_end_traversal() {
 
     let namespace = std::env::var("SURREALDB_NS").unwrap_or_else(|_| "nova".to_string());
     let database = std::env::var("SURREALDB_DB").unwrap_or_else(|_| "main".to_string());
+    let username = std::env::var("SURREALDB_USER").unwrap_or_else(|_| "root".to_string());
+    let password = std::env::var("SURREALDB_PASSWORD").unwrap_or_else(|_| "root".to_string());
 
-    let graph = NovaGraphDb::surreal(endpoint, namespace, database);
+    let graph = NovaGraphDb::surreal_with_auth(endpoint, namespace, database, username, password);
 
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -5,7 +5,7 @@ use serde_json::Value as JsonValue;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 fn sanitize_symbol(value: &str) -> String {
     let cleaned = value
@@ -554,6 +554,9 @@ pub struct SurrealGraphStore {
     pub namespace: String,
     pub database: String,
     client: reqwest::Client,
+    username: Option<String>,
+    password: Option<String>,
+    token: Mutex<Option<String>>,
 }
 
 impl SurrealGraphStore {
@@ -567,18 +570,105 @@ impl SurrealGraphStore {
             namespace: namespace.into(),
             database: database.into(),
             client: reqwest::Client::new(),
+            username: None,
+            password: None,
+            token: Mutex::new(None),
         }
+    }
+
+    pub fn new_with_auth(
+        endpoint: impl Into<String>,
+        namespace: impl Into<String>,
+        database: impl Into<String>,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Self {
+        Self {
+            endpoint: endpoint.into(),
+            namespace: namespace.into(),
+            database: database.into(),
+            client: reqwest::Client::new(),
+            username: Some(username.into()),
+            password: Some(password.into()),
+            token: Mutex::new(None),
+        }
+    }
+
+    async fn auth_token(&self) -> Result<Option<String>, GraphDbError> {
+        let Some(username) = &self.username else {
+            return Ok(None);
+        };
+        let Some(password) = &self.password else {
+            return Ok(None);
+        };
+
+        let mut guard = self.token.lock().await;
+        if let Some(token) = guard.as_ref() {
+            return Ok(Some(token.clone()));
+        }
+
+        let endpoint = format!("{}/signin", self.endpoint.trim_end_matches('/'));
+        let payload = serde_json::json!({
+            "user": username,
+            "pass": password,
+        });
+
+        let resp = self
+            .client
+            .post(endpoint)
+            .header("Accept", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| GraphDbError::Backend(e.to_string()))?;
+
+        let status = resp.status();
+        let json: JsonValue = resp
+            .json()
+            .await
+            .map_err(|e| GraphDbError::Serialization(e.to_string()))?;
+
+        if !status.is_success() {
+            return Err(GraphDbError::Backend(format!(
+                "surrealdb signin http status {}: {}",
+                status, json
+            )));
+        }
+
+        let token = json
+            .get("token")
+            .and_then(JsonValue::as_str)
+            .or_else(|| json.get("result").and_then(JsonValue::as_str))
+            .or_else(|| {
+                json.get("result")
+                    .and_then(JsonValue::as_object)
+                    .and_then(|obj| obj.get("token"))
+                    .and_then(JsonValue::as_str)
+            })
+            .ok_or_else(|| {
+                GraphDbError::Backend(format!("surrealdb signin response missing token: {}", json))
+            })?
+            .to_string();
+
+        *guard = Some(token.clone());
+        Ok(Some(token))
     }
 
     async fn run_sql(&self, sql: &str) -> Result<JsonValue, GraphDbError> {
         let endpoint = format!("{}/sql", self.endpoint.trim_end_matches('/'));
 
-        let resp = self
+        let mut request = self
             .client
             .post(endpoint)
             .header("NS", &self.namespace)
             .header("DB", &self.database)
-            .header("Accept", "application/json")
+            .header("Accept", "application/json");
+
+        if let Some(token) = self.auth_token().await? {
+            request = request.header("Authorization", format!("Bearer {token}"));
+        }
+
+        let resp = request
             .body(sql.to_string())
             .send()
             .await
@@ -890,6 +980,18 @@ impl NovaGraphDb {
     ) -> Self {
         Self::new(Arc::new(SurrealGraphStore::new(
             endpoint, namespace, database,
+        )))
+    }
+
+    pub fn surreal_with_auth(
+        endpoint: impl Into<String>,
+        namespace: impl Into<String>,
+        database: impl Into<String>,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Self {
+        Self::new(Arc::new(SurrealGraphStore::new_with_auth(
+            endpoint, namespace, database, username, password,
         )))
     }
 
