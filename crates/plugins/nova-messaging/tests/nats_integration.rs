@@ -29,6 +29,11 @@ async fn nats_publish_poll_and_dlq_roundtrip() {
         .expect("initial poll should work even when empty");
 
     messaging
+        .poll_dlq(&dlq_source, 1)
+        .await
+        .expect("initial dlq poll should work even when empty");
+
+    messaging
         .publish_envelope(envelope.clone())
         .await
         .expect("publish should succeed");
