@@ -18,6 +18,45 @@ async fn surreal_end_to_end_traversal() {
     let username = std::env::var("SURREALDB_USER").unwrap_or_else(|_| "root".to_string());
     let password = std::env::var("SURREALDB_PASSWORD").unwrap_or_else(|_| "root".to_string());
 
+    let root_client = reqwest::Client::new();
+    let mut root_headers = reqwest::header::HeaderMap::new();
+    root_headers.insert(
+        reqwest::header::ACCEPT,
+        "application/json".parse().expect("accept header"),
+    );
+
+    let create_namespace = root_client
+        .post(format!("{}/sql", endpoint.trim_end_matches('/')))
+        .basic_auth(&username, Some(&password))
+        .headers(root_headers)
+        .body(format!("DEFINE NAMESPACE `{namespace}`"))
+        .send()
+        .await
+        .expect("create namespace request should succeed");
+    assert!(
+        create_namespace.status().is_success(),
+        "create namespace request failed: {}",
+        create_namespace.text().await.expect("namespace body")
+    );
+
+    let mut ns_headers = reqwest::header::HeaderMap::new();
+    ns_headers.insert("Accept", "application/json".parse().expect("accept header"));
+    ns_headers.insert("surreal-ns", namespace.parse().expect("namespace header"));
+
+    let create_database = root_client
+        .post(format!("{}/sql", endpoint.trim_end_matches('/')))
+        .basic_auth(&username, Some(&password))
+        .headers(ns_headers)
+        .body(format!("DEFINE DATABASE `{database}`"))
+        .send()
+        .await
+        .expect("create database request should succeed");
+    assert!(
+        create_database.status().is_success(),
+        "create database request failed: {}",
+        create_database.text().await.expect("database body")
+    );
+
     let graph = NovaGraphDb::surreal_with_auth(endpoint, namespace, database, username, password);
 
     let suffix = SystemTime::now()

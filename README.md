@@ -126,6 +126,14 @@ sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
 Or download a release from https://github.com/protocolbuffers/protobuf/releases and set the `PROTOC` environment variable to the `protoc` binary path if you prefer a custom location.
 
+In GitHub Actions, the CI workflow installs `protoc` automatically before the build and test steps, so the repository does not need to keep a checked-in `PROTOC` override. If you want the local wrapper script, set it outside the repo, for example:
+
+```bash
+export PROTOC=/absolute/path/to/nova/scripts/protoc-wrapper.sh
+```
+
+or put the same setting in your personal `~/.cargo/config.toml`.
+
 If you don't need to build the etcd plugin locally, run tests excluding that crate:
 
 ```bash

@@ -49,23 +49,16 @@ fn parse_surreal_record_id(value: &JsonValue) -> Option<String> {
     })
 }
 
-fn parse_surreal_rel_type(value: &JsonValue) -> Option<String> {
+fn surreal_value_to_node(value: &JsonValue) -> Option<GraphNode> {
     if let Some(id) = value.as_str() {
-        return id
-            .split(':')
-            .next()
-            .map(ToString::to_string)
-            .filter(|s| !s.is_empty());
+        let parsed_id = parse_surreal_record_id(value)?;
+        return Some(GraphNode {
+            id: parsed_id,
+            labels: vec![id.split(':').next().unwrap_or("node").to_string()],
+            properties: HashMap::new(),
+        });
     }
 
-    value
-        .as_object()
-        .and_then(|obj| obj.get("tb"))
-        .and_then(JsonValue::as_str)
-        .map(ToString::to_string)
-}
-
-fn surreal_value_to_node(value: &JsonValue) -> Option<GraphNode> {
     let obj = value.as_object()?;
 
     let raw_id = obj.get("id")?;
@@ -94,56 +87,6 @@ fn surreal_value_to_node(value: &JsonValue) -> Option<GraphNode> {
     Some(GraphNode {
         id,
         labels,
-        properties,
-    })
-}
-
-fn surreal_value_to_edge(value: &JsonValue) -> Option<GraphEdge> {
-    let obj = value.as_object()?;
-
-    let raw_id = obj.get("id")?;
-    let id = parse_surreal_record_id(raw_id)?;
-    let rel_type = obj
-        .get("rel_type")
-        .and_then(JsonValue::as_str)
-        .map(ToString::to_string)
-        .or_else(|| parse_surreal_rel_type(raw_id))
-        .unwrap_or_else(|| "RELATED".to_string());
-
-    let from = obj
-        .get("in")
-        .or_else(|| obj.get("from"))
-        .and_then(parse_surreal_record_id)?;
-    let to = obj
-        .get("out")
-        .or_else(|| obj.get("to"))
-        .and_then(parse_surreal_record_id)?;
-
-    let mut properties = obj
-        .get("properties")
-        .and_then(JsonValue::as_object)
-        .cloned()
-        .map(|m| m.into_iter().collect::<HashMap<_, _>>())
-        .unwrap_or_default();
-
-    for (k, v) in obj {
-        if k != "id"
-            && k != "in"
-            && k != "out"
-            && k != "from"
-            && k != "to"
-            && k != "properties"
-            && !k.starts_with('_')
-        {
-            properties.entry(k.clone()).or_insert_with(|| v.clone());
-        }
-    }
-
-    Some(GraphEdge {
-        id,
-        from,
-        to,
-        rel_type,
         properties,
     })
 }
@@ -660,8 +603,8 @@ impl SurrealGraphStore {
         let mut request = self
             .client
             .post(endpoint)
-            .header("NS", &self.namespace)
-            .header("DB", &self.database)
+            .header("surreal-ns", &self.namespace)
+            .header("surreal-db", &self.database)
             .header("Accept", "application/json");
 
         if let Some(token) = self.auth_token().await? {
@@ -710,7 +653,7 @@ impl GraphStore for SurrealGraphStore {
         let properties = serde_json::to_string(&node.properties)
             .map_err(|e| GraphDbError::Serialization(e.to_string()))?;
         let sql = format!(
-            "UPSERT {table}:{} MERGE {{ id: '{}', properties: {} }};",
+            "UPSERT {table}:{} SET id = '{}', properties = {};",
             node.id, node.id, properties
         );
         self.run_sql(&sql).await.map(|_| ())
@@ -721,7 +664,7 @@ impl GraphStore for SurrealGraphStore {
         let props = serde_json::to_string(&edge.properties)
             .map_err(|e| GraphDbError::Serialization(e.to_string()))?;
         let sql = format!(
-            "RELATE node:{}->{rel}->node:{} CONTENT {{ id: '{}', properties: {} }};",
+            "RELATE node:{}->{rel}->node:{} SET id = '{}', properties = {};",
             edge.from, edge.to, edge.id, props
         );
         self.run_sql(&sql).await.map(|_| ())
@@ -745,28 +688,8 @@ impl GraphStore for SurrealGraphStore {
     }
 
     async fn neighbors(&self, node_id: &str) -> Result<Vec<GraphNode>, GraphDbError> {
-        let edge_sql = format!("SELECT ->? AS edges FROM node:{};", node_id);
-        let edge_json = self.run_sql(&edge_sql).await?;
-        let edge_rows = surreal_result_rows(&edge_json);
         let mut out = Vec::new();
 
-        for row in edge_rows {
-            if let Some(edges) = row.get("edges").and_then(JsonValue::as_array) {
-                for item in edges {
-                    if let Some(edge) = surreal_value_to_edge(item)
-                        && let Some(node) = self.get_node(&edge.to).await?
-                    {
-                        out.push(node);
-                    }
-                }
-            }
-        }
-
-        if !out.is_empty() {
-            return Ok(out);
-        }
-
-        // Fallback shape for servers returning direct node arrays.
         let sql = format!("SELECT ->?->node AS neighbors FROM node:{};", node_id);
         let json = self.run_sql(&sql).await?;
         let rows = surreal_result_rows(&json);
@@ -807,30 +730,6 @@ impl GraphStore for SurrealGraphStore {
                 continue;
             }
 
-            let edge_sql = format!("SELECT ->? AS edges FROM node:{};", current);
-            let edge_json = self.run_sql(&edge_sql).await?;
-            let edge_rows = surreal_result_rows(&edge_json);
-            let mut parsed_any_edges = false;
-
-            for row in edge_rows {
-                if let Some(items) = row.get("edges").and_then(JsonValue::as_array) {
-                    for item in items {
-                        if let Some(edge) = surreal_value_to_edge(item)
-                            && edge_ids.insert(edge.id.clone())
-                        {
-                            parsed_any_edges = true;
-                            q.push_back((edge.to.clone(), depth + 1));
-                            edges.push(edge);
-                        }
-                    }
-                }
-            }
-
-            if parsed_any_edges {
-                continue;
-            }
-
-            // Fallback path for result sets that only return neighbor nodes.
             for n in self.neighbors(&current).await? {
                 let synthetic_edge_id = format!("{}->{}", current, n.id);
                 if edge_ids.insert(synthetic_edge_id.clone()) {
@@ -1286,44 +1185,5 @@ mod tests {
         let json = graph.traverse_json("s1", 1).await.expect("traverse json");
         assert!(json.get("nodes").is_some());
         assert!(json.get("edges").is_some());
-    }
-
-    #[test]
-    fn surreal_helpers_parse_edges_with_relation_type_and_properties() {
-        let payload = serde_json::json!([
-            {
-                "status": "OK",
-                "result": [
-                    {
-                        "edges": [
-                            {
-                                "id": {"tb": "follows", "id": "e1"},
-                                "in": "node:u1",
-                                "out": "node:u2",
-                                "properties": {"since": 2024},
-                                "weight": 0.8
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]);
-
-        let rows = surreal_result_rows(&payload);
-        assert_eq!(rows.len(), 1);
-
-        let edge_value = rows[0]
-            .get("edges")
-            .and_then(JsonValue::as_array)
-            .and_then(|a| a.first())
-            .expect("edge should exist");
-
-        let edge = surreal_value_to_edge(edge_value).expect("edge should parse");
-        assert_eq!(edge.id, "e1");
-        assert_eq!(edge.from, "u1");
-        assert_eq!(edge.to, "u2");
-        assert_eq!(edge.rel_type, "follows");
-        assert_eq!(edge.properties.get("since"), Some(&serde_json::json!(2024)));
-        assert_eq!(edge.properties.get("weight"), Some(&serde_json::json!(0.8)));
     }
 }
