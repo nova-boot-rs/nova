@@ -1,4 +1,4 @@
-use nova_core::{NovaError, NovaResult};
+pub type NovaResult<T> = Result<T, ValidationErrors>;
 
 #[derive(Debug, Clone, Default)]
 pub struct ValidationErrors {
@@ -22,7 +22,7 @@ impl ValidationErrors {
         if self.errors.is_empty() {
             Ok(())
         } else {
-            Err(NovaError::ValidationError(self.errors.join("; ")))
+            Err(self)
         }
     }
 }
@@ -32,9 +32,7 @@ pub trait NovaValidate {
 }
 
 pub fn validate_request<T: NovaValidate>(value: &T) -> NovaResult<()> {
-    value
-        .validate()
-        .map_err(|errs| NovaError::ValidationError(errs.errors.join("; ")))
+    value.validate()
 }
 
 pub fn required_string(field: &str, value: &str) -> Option<String> {
