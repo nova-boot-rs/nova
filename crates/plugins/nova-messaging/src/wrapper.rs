@@ -1,5 +1,7 @@
-use crate::{envelope::EventEnvelope, error::MessagingError, memory::InMemoryBroker, traits::MessageBroker};
-use serde::{de::DeserializeOwned, Serialize};
+use crate::{
+    envelope::EventEnvelope, error::MessagingError, memory::InMemoryBroker, traits::MessageBroker,
+};
+use serde::{Serialize, de::DeserializeOwned};
 use std::sync::Arc;
 
 #[derive(Clone)]

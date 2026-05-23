@@ -1,5 +1,5 @@
 use crate::error::NoSqlError;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;
 
 /// Generic serde mapping helpers for NoSQL documents.

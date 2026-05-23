@@ -1,4 +1,8 @@
-use crate::{error::NoSqlError, traits::{DocumentCacheStore, DocumentStore}, types::NoSqlIndex};
+use crate::{
+    error::NoSqlError,
+    traits::{DocumentCacheStore, DocumentStore},
+    types::NoSqlIndex,
+};
 use async_trait::async_trait;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;

@@ -1,8 +1,8 @@
 use crate::{envelope::EventEnvelope, error::MessagingError, traits::MessageBroker};
 use async_trait::async_trait;
 use futures_util::StreamExt;
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::time::Duration;
 use tokio::sync::Mutex;
 

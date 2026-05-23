@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemFn, LitStr};
+use syn::{ItemFn, LitStr, parse_macro_input};
 
 fn route_macro(method: &str, path: String, handler: ItemFn) -> TokenStream {
     let fn_name = &handler.sig.ident;

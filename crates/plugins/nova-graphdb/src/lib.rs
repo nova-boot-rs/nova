@@ -17,7 +17,7 @@ pub use neo4j::Neo4jGraphStore;
 pub use surreal::SurrealGraphStore;
 pub use traits::GraphStore;
 pub use types::{GraphEdge, GraphNode, GraphQuery, GraphSubgraph};
-pub use wrapper::{graph_to_json, NovaGraphDb};
+pub use wrapper::{NovaGraphDb, graph_to_json};
 
 #[cfg(test)]
 mod tests;

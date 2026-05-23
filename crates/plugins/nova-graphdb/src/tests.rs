@@ -1,11 +1,11 @@
 use crate::{
+    NovaGraphDb,
     builders::{CypherQueryBuilder, GraphQlQueryBuilder},
     error::GraphDbError,
     memory::InMemoryGraphStore,
-    traits::GraphStore,
     surreal::{surreal_result_rows, surreal_value_to_node},
+    traits::GraphStore,
     types::*,
-    NovaGraphDb,
 };
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -32,9 +32,18 @@ fn edge(id: &str, from: &str, to: &str, rel_type: &str) -> GraphEdge {
 async fn traversal_helpers_work_for_in_memory_graph() {
     let graph = NovaGraphDb::in_memory();
 
-    graph.upsert_node(node("u1", "User")).await.expect("insert node u1");
-    graph.upsert_node(node("u2", "User")).await.expect("insert node u2");
-    graph.upsert_node(node("u3", "User")).await.expect("insert node u3");
+    graph
+        .upsert_node(node("u1", "User"))
+        .await
+        .expect("insert node u1");
+    graph
+        .upsert_node(node("u2", "User"))
+        .await
+        .expect("insert node u2");
+    graph
+        .upsert_node(node("u3", "User"))
+        .await
+        .expect("insert node u3");
     graph
         .upsert_edge(edge("e1", "u1", "u2", "FOLLOWS"))
         .await
@@ -100,13 +109,18 @@ async fn in_memory_rejects_invalid_edge_input() {
             properties: HashMap::new(),
         })
         .await;
-    assert!(matches!(missing_endpoints, Err(GraphDbError::InvalidInput(_))));
+    assert!(matches!(
+        missing_endpoints,
+        Err(GraphDbError::InvalidInput(_))
+    ));
 }
 
 #[tokio::test]
 async fn in_memory_execute_is_not_implemented() {
     let store = InMemoryGraphStore::default();
-    let result = store.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
+    let result = store
+        .execute(GraphQuery::Cypher("RETURN 1".to_string()))
+        .await;
     assert!(matches!(result, Err(GraphDbError::NotImplemented(_))));
 }
 
@@ -141,7 +155,9 @@ fn graphql_builder_produces_expected_query() {
 #[tokio::test]
 async fn neo4j_adapter_is_constructible() {
     let graph = NovaGraphDb::neo4j("http://127.0.0.1:65535", "neo4j", "pass");
-    let result = graph.execute(GraphQuery::Cypher("RETURN 1".to_string())).await;
+    let result = graph
+        .execute(GraphQuery::Cypher("RETURN 1".to_string()))
+        .await;
     assert!(matches!(result, Err(GraphDbError::Backend(_))));
 }
 

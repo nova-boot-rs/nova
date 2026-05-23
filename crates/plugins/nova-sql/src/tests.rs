@@ -1,4 +1,4 @@
-use crate::{cache::{InMemoryQueryCache, QueryCacheStore}};
+use crate::cache::{InMemoryQueryCache, QueryCacheStore};
 use std::time::Duration;
 
 #[tokio::test]

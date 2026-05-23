@@ -1,5 +1,10 @@
-use crate::{error::NoSqlError, mapper::SerdeDocumentMapper, traits::{DocumentCacheStore, DocumentStore}, types::NoSqlIndex};
-use serde::{de::DeserializeOwned, Serialize};
+use crate::{
+    error::NoSqlError,
+    mapper::SerdeDocumentMapper,
+    traits::{DocumentCacheStore, DocumentStore},
+    types::NoSqlIndex,
+};
+use serde::{Serialize, de::DeserializeOwned};
 use std::sync::Arc;
 
 #[derive(Clone)]

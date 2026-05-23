@@ -66,7 +66,10 @@ impl NovaSql {
             if self.allow_drop {
                 for db_col in existing_columns {
                     if !model_columns.contains(&db_col) {
-                        println!("🗑️ Dropping unused column '{}' from '{}'", db_col, table_name);
+                        println!(
+                            "🗑️ Dropping unused column '{}' from '{}'",
+                            db_col, table_name
+                        );
 
                         let drop_stmt = builder.build(
                             &sea_query::Table::alter()

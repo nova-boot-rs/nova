@@ -2,9 +2,9 @@ use crate::{error::NoSqlError, traits::DocumentStore, types::NoSqlIndex};
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
 use mongodb::{
-    bson::{doc, Bson, Document},
-    options::IndexOptions,
     Client,
+    bson::{Bson, Document, doc},
+    options::IndexOptions,
 };
 use serde_json::Value as JsonValue;
 

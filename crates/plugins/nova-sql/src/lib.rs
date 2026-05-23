@@ -13,7 +13,9 @@ mod tenant_scope;
 pub use cache::*;
 pub use connection::{NovaSql, PoolOptions};
 pub use pool::ReadWritePool;
-pub use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbBackend, EntityTrait, Schema, Statement};
+pub use sea_orm::{
+    ConnectionTrait, Database, DatabaseConnection, DbBackend, EntityTrait, Schema, Statement,
+};
 pub use sea_orm_migration::prelude::*;
 pub use tenant::*;
 pub use tenant_middleware::*;

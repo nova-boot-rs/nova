@@ -25,7 +25,9 @@ impl NovaGraphDb {
         user: impl Into<String>,
         password: impl Into<String>,
     ) -> Self {
-        Self::new(Arc::new(crate::neo4j::Neo4jGraphStore::new(uri, user, password)))
+        Self::new(Arc::new(crate::neo4j::Neo4jGraphStore::new(
+            uri, user, password,
+        )))
     }
 
     pub fn surreal(

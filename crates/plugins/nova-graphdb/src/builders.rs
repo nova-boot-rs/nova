@@ -102,6 +102,9 @@ impl GraphQlQueryBuilder {
             self.fields.join(" ")
         };
 
-        GraphQuery::GraphQl(format!("query {{ {}{} {{ {} }} }}", self.root, args, fields))
+        GraphQuery::GraphQl(format!(
+            "query {{ {}{} {{ {} }} }}",
+            self.root, args, fields
+        ))
     }
 }

@@ -5,8 +5,8 @@ use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Message as RdkMessage;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::time::Duration;
 use tokio::sync::Mutex;
 

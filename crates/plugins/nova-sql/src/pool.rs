@@ -1,8 +1,8 @@
 use crate::connection::NovaSql;
 use sea_orm::DatabaseConnection;
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
     Arc,
+    atomic::{AtomicUsize, Ordering},
 };
 use tokio::sync::RwLock;
 

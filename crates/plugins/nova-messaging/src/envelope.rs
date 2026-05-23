@@ -1,5 +1,5 @@
 use crate::error::MessagingError;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};

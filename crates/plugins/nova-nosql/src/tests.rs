@@ -1,4 +1,11 @@
-use crate::{memory::InMemoryDocumentStore, traits::{DocumentCacheStore, DocumentStore}, types::NoSqlIndex, wrapper::NovaNoSql, error::NoSqlError, mongo::MongoDocumentStore};
+use crate::{
+    error::NoSqlError,
+    memory::InMemoryDocumentStore,
+    mongo::MongoDocumentStore,
+    traits::{DocumentCacheStore, DocumentStore},
+    types::NoSqlIndex,
+    wrapper::NovaNoSql,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -30,7 +37,9 @@ struct FailingStore;
 #[async_trait::async_trait]
 impl DocumentStore for FailingStore {
     async fn get(&self, _collection: &str, _id: &str) -> Result<Option<JsonValue>, NoSqlError> {
-        Err(NoSqlError::Backend("primary should not be called".to_string()))
+        Err(NoSqlError::Backend(
+            "primary should not be called".to_string(),
+        ))
     }
 
     async fn upsert(
@@ -46,11 +55,7 @@ impl DocumentStore for FailingStore {
         Err(NoSqlError::Backend("not used".to_string()))
     }
 
-    async fn create_index(
-        &self,
-        _collection: &str,
-        _index: NoSqlIndex,
-    ) -> Result<(), NoSqlError> {
+    async fn create_index(&self, _collection: &str, _index: NoSqlIndex) -> Result<(), NoSqlError> {
         Err(NoSqlError::Backend("not used".to_string()))
     }
 
