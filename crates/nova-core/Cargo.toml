@@ -11,6 +11,9 @@ tower.workspace = true
 tower-http = { workspace = true, features = ["request-id"] }
 inventory.workspace = true
 
+# Optional TLS support for `run_tls`
+axum-server = { workspace = true,  features = ["tls-rustls-no-provider"], optional = true }
+
 # Serialization & Utilities
 serde.workspace = true
 serde_json.workspace = true
@@ -25,7 +28,12 @@ sea-orm = { workspace = true, optional = true }
 nova-macros = { path = "../nova-macros" }
 nova-resilience-store = { path = "../nova-resilience-store" }
 
+[dev-dependencies]
+serial_test = "3.4"
+
+
 [features]
 default = []
 database = ["sea-orm"]
 redis-store = ["nova-resilience-store/redis-store"]
+tls = ["dep:axum-server"]

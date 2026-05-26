@@ -109,15 +109,46 @@ impl DistributedRateLimiter {
         format!("rl:{}:{}", self.prefix, client)
     }
 
+    fn allow_script() -> &'static str {
+        r#"
+        local key = KEYS[1]
+        local window_seconds = tonumber(ARGV[1])
+        local capacity = tonumber(ARGV[2])
+
+        local current = redis.call('INCR', key)
+        if current == 1 then
+            redis.call('EXPIRE', key, window_seconds)
+        end
+
+        if current > capacity then
+            return 0
+        end
+
+        return 1
+        "#
+    }
+
     /// Attempt to consume a single token for `client`.
     pub async fn allow(&self, client: &str) -> Result<bool, NovaError> {
         let key = self.key_for(client);
-        let v = self.store.incr(&key).await?;
-        if v == 1 {
-            // first set the expiry for the window
-            self.store.set_ex(&key, v, self.window_seconds).await?;
+        let window_seconds = self.window_seconds.to_string();
+        let capacity = self.capacity.to_string();
+
+        let value = self
+            .store
+            .eval_lua(
+                Self::allow_script(),
+                &[key.as_str()],
+                &[window_seconds.as_str(), capacity.as_str()],
+            )
+            .await?;
+
+        match value.as_i64() {
+            Some(result) => Ok(result > 0),
+            None => Err(NovaError::InternalError(
+                "rate limiter lua script returned unexpected value".to_string(),
+            )),
         }
-        Ok(v <= self.capacity)
     }
 }
 
@@ -394,6 +425,79 @@ impl RateLimiter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nova_resilience_store::{LuaValue, ResilienceError, ResilienceStore};
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
+
+    #[derive(Clone)]
+    struct MockLuaStore {
+        response: LuaValue,
+        script: Arc<Mutex<Option<String>>>,
+        keys: Arc<Mutex<Vec<String>>>,
+        args: Arc<Mutex<Vec<String>>>,
+    }
+
+    impl MockLuaStore {
+        fn new(response: LuaValue) -> Self {
+            Self {
+                response,
+                script: Arc::new(Mutex::new(None)),
+                keys: Arc::new(Mutex::new(Vec::new())),
+                args: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ResilienceStore for MockLuaStore {
+        async fn incr(&self, _key: &str) -> Result<i64, ResilienceError> {
+            unimplemented!()
+        }
+
+        async fn get_i64(&self, _key: &str) -> Result<Option<i64>, ResilienceError> {
+            unimplemented!()
+        }
+
+        async fn set_ex(
+            &self,
+            _key: &str,
+            _val: i64,
+            _ttl_seconds: usize,
+        ) -> Result<(), ResilienceError> {
+            unimplemented!()
+        }
+
+        async fn del(&self, _key: &str) -> Result<(), ResilienceError> {
+            unimplemented!()
+        }
+
+        async fn eval_lua(
+            &self,
+            script: &str,
+            keys: &[&str],
+            args: &[&str],
+        ) -> Result<LuaValue, ResilienceError> {
+            *self.script.lock().await = Some(script.to_string());
+            *self.keys.lock().await = keys.iter().map(|value| (*value).to_string()).collect();
+            *self.args.lock().await = args.iter().map(|value| (*value).to_string()).collect();
+            Ok(self.response.clone())
+        }
+    }
+
+    #[tokio::test]
+    async fn distributed_rate_limiter_uses_atomic_lua_script() {
+        let store_impl = Arc::new(MockLuaStore::new(LuaValue::Integer(1)));
+        let store: Arc<dyn ResilienceStore> = store_impl.clone();
+        let limiter = DistributedRateLimiter::new(store, "api", 10, 60);
+
+        assert!(limiter.allow("client1").await.unwrap());
+
+        let script = store_impl.script.lock().await.clone().unwrap();
+        assert!(script.contains("redis.call('INCR', key)"));
+        assert!(script.contains("redis.call('EXPIRE', key, window_seconds)"));
+        assert_eq!(store_impl.keys.lock().await.as_slice(), &["rl:api:client1"]);
+        assert_eq!(store_impl.args.lock().await.as_slice(), &["60", "10"]);
+    }
 
     #[tokio::test]
     async fn circuit_breaker_opens_at_threshold() {

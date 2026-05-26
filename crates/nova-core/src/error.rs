@@ -4,6 +4,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
+use std::backtrace::Backtrace;
+use std::env;
 use std::fmt;
 
 /// Standardized error response for Nova API
@@ -130,10 +132,21 @@ impl NovaError {
 impl IntoResponse for NovaError {
     fn into_response(self) -> Response {
         let status = self.status_code();
+        // If `NOVA_DEBUG=true` is set, include a captured backtrace (which
+        // will contain file and line information when available) in the
+        // `details` field of the JSON error response. Otherwise omit details
+        // to avoid leaking internal information in production.
+        let details = match env::var("NOVA_DEBUG") {
+            Ok(val) if val.eq_ignore_ascii_case("true") || val == "1" => {
+                Some(format!("{:?}", Backtrace::capture()))
+            }
+            _ => None,
+        };
+
         let body = Json(ErrorResponse {
             error: self.error_type().to_string(),
             message: self.message(),
-            details: None,
+            details,
         });
 
         (status, body).into_response()

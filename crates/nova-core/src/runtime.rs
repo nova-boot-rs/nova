@@ -3,9 +3,9 @@ use axum::Json;
 use axum::routing::MethodRouter;
 use axum::routing::get;
 use axum::{Router, serve};
-// Tracing and OpenAPI are provided by optional plugins (observability).
 use serde_json::json;
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::info;
 
@@ -43,8 +43,8 @@ where
 {
     name: &'static str,
     port: u16,
-    router: Router<S>,
-    address: std::net::SocketAddr,
+    // router: Router<S>,
+    address: SocketAddr,
     state: S,
     plugins: Vec<Box<dyn NovaPlugin>>,
 }
@@ -52,7 +52,7 @@ where
 pub struct NovaRoute {
     pub path: &'static str,
     pub method: &'static str,
-    pub handler: fn() -> MethodRouter<()>, // Keep () — converts to S via Into
+    pub handler: fn() -> MethodRouter<()>,
 }
 
 inventory::collect!(NovaRoute);
@@ -64,12 +64,12 @@ where
     S: Clone + Send + Sync + 'static,
 {
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
-        let router = Router::<S>::new().route("/health", get(framework_health));
+        // let router = Router::<S>::new().route("/health", get(framework_health));
 
         Self {
             name,
             port,
-            router,
+            // router,
             address: format!("0.0.0.0:{port}").parse().expect("Invalid address"),
             state,
             plugins: Vec::new(),
@@ -81,18 +81,18 @@ where
         self
     }
 
-    pub async fn run(self) {
+    async fn build_router(&self) -> Router<()> {
+        // Step 1: Initialize all plugins
         for plugin in &self.plugins {
             info!("🔌 Loading plugin: {}", plugin.name());
             plugin.on_init().await;
         }
 
-        // Start with framework routes + state
-        let mut app_router = self.router.with_state(self.state.clone());
+        // Step 2: Build base router as Router<()> with framework routes
+        let mut base: Router<()> = Router::<()>::new().route("/health", get(framework_health));
 
-        // Collect and deduplicate inventory routes
+        // Step 3: Collect and deduplicate inventory routes
         let mut route_map: RouteRegistry = HashMap::new();
-
         for route in inventory::iter::<NovaRoute> {
             let key = (route.method, route.path);
             if route_map.insert(key, route.handler).is_some() {
@@ -104,21 +104,38 @@ where
             }
         }
 
+        // Step 4: Register inventory routes
         for ((method, path), handler) in route_map.into_iter() {
             info!("📡 Registering {} route: {}", method, path);
             let method_router: MethodRouter<()> = (handler)();
-            // MethodRouter<()> → MethodRouter<S> via Into
-            app_router = app_router.route(path, method_router);
+            base = base.route(path, method_router);
         }
 
-        // Plugins are responsible for adding tracing, OpenAPI, and other layers.
-        let mut final_router = app_router;
+        // Step 5: Inject application state as an Extension layer
+        // Handlers use `Extension<S>` or a wrapper to access state.
+        base = base.layer(axum::Extension(self.state.clone()));
 
-        // Let plugins extend the router
+        // Step 6: Let plugins extend the router
         for plugin in &self.plugins {
             info!("🔌 Injecting state for: {}", plugin.name());
-            final_router = plugin.extend_router(final_router);
+            base = plugin.extend_router(base);
         }
+
+        base
+    }
+
+    /// Run plugin shutdown hooks in reverse order.
+    async fn shutdown(&self) {
+        info!("🛑 {} shutting down", self.name);
+        for plugin in self.plugins.iter().rev() {
+            info!("🔌 Stopping plugin: {}", plugin.name());
+            plugin.on_shutdown().await;
+        }
+    }
+
+    /// Run the server on plain HTTP.
+    pub async fn run(self) {
+        let final_router: Router<()> = self.build_router().await;
 
         info!("🚀 {} starting on port {}", self.name, self.port);
         let listener = TcpListener::bind(&self.address)
@@ -130,10 +147,42 @@ where
             .await
             .expect("Server failed to start");
 
-        info!("🛑 {} shutting down", self.name);
-        for plugin in self.plugins.iter().rev() {
-            info!("🔌 Stopping plugin: {}", plugin.name());
-            plugin.on_shutdown().await;
-        }
+        self.shutdown().await;
+    }
+
+    /// Run the server with TLS (HTTPS).
+    #[cfg(feature = "tls")]
+    pub async fn run_tls(self, cert_pem: &[u8], key_pem: &[u8]) {
+        use axum_server::Handle;
+        use axum_server::tls_rustls::RustlsConfig;
+
+        let final_router: Router<()> = self.build_router().await;
+        let handle = Handle::new();
+        let shutdown_handle = handle.clone();
+
+        let config = RustlsConfig::from_pem(cert_pem.to_vec(), key_pem.to_vec())
+            .await
+            .expect("invalid TLS certificate or key");
+
+        info!("🔒 {} starting on port {} with TLS", self.name, self.port);
+
+        tokio::spawn(async move {
+            shutdown_signal().await;
+            shutdown_handle.shutdown();
+        });
+
+        axum_server::bind_rustls(self.address, config)
+            .handle(handle.clone())
+            .serve(final_router.into_make_service())
+            .await
+            .expect("Server failed to start");
+
+        self.shutdown().await;
+    }
+
+    /// TLS support is only available when the `tls` feature is enabled.
+    #[cfg(not(feature = "tls"))]
+    pub async fn run_tls(self, _cert_pem: &[u8], _key_pem: &[u8]) {
+        panic!("TLS support requires enabling the `tls` feature");
     }
 }
