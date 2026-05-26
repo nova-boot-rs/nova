@@ -43,7 +43,7 @@ where
 {
     name: &'static str,
     port: u16,
-    // router: Router<S>,
+    router: Router<()>,
     address: SocketAddr,
     state: S,
     plugins: Vec<Box<dyn NovaPlugin>>,
@@ -64,12 +64,12 @@ where
     S: Clone + Send + Sync + 'static,
 {
     pub fn new(name: &'static str, port: u16, state: S) -> Self {
-        // let router = Router::<S>::new().route("/health", get(framework_health));
+        let router = Router::<()>::new().route("/health", get(framework_health));
 
         Self {
             name,
             port,
-            // router,
+            router,
             address: format!("0.0.0.0:{port}").parse().expect("Invalid address"),
             state,
             plugins: Vec::new(),
@@ -89,7 +89,7 @@ where
         }
 
         // Step 2: Build base router as Router<()> with framework routes
-        let mut base: Router<()> = Router::<()>::new().route("/health", get(framework_health));
+        let mut base: Router<()> = self.router.clone();
 
         // Step 3: Collect and deduplicate inventory routes
         let mut route_map: RouteRegistry = HashMap::new();
