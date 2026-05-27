@@ -1,4 +1,4 @@
-use nova_graphdb::{NovaGraphDb, GraphNode, GraphEdge};
+use nova_graphdb::{GraphEdge, GraphNode, NovaGraphDb};
 use std::collections::HashMap;
 
 #[tokio::main]

@@ -12,5 +12,8 @@ async fn main() {
     let _write = pool.write();
     let _read = pool.read().await;
 
-    println!("connected to database; replicas={}", sql.replica_count().await);
+    println!(
+        "connected to database; replicas={}",
+        sql.replica_count().await
+    );
 }

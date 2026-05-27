@@ -1,6 +1,6 @@
 use nova_sql::NovaSql;
-use sea_orm_migration::prelude::{MigrationTrait, MigratorTrait};
 use sea_orm::DbErr;
+use sea_orm_migration::prelude::{MigrationTrait, MigratorTrait};
 use std::time::Duration;
 
 struct DummyMigrator;

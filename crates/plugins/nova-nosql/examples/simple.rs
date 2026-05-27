@@ -8,7 +8,9 @@ async fn main() {
         Ok(nosql) => {
             println!("connected to redis-backed NovaNoSql");
             // Try a dummy upsert & get flow using JSON strings
-            let _ = nosql.upsert("demo", "id1", &serde_json::json!({"hello":"world"})).await;
+            let _ = nosql
+                .upsert("demo", "id1", &serde_json::json!({"hello":"world"}))
+                .await;
         }
         Err(e) => {
             eprintln!("failed to construct NovaNoSql: {}", e);

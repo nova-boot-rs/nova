@@ -6,7 +6,9 @@ use std::time::Duration;
 async fn main() {
     let cache: Arc<dyn nova_sql::cache::QueryCacheStore> = Arc::new(InMemoryQueryCache::default());
 
-    let sql = NovaSql::connect("sqlite::memory:", false).await.with_cache_store(cache);
+    let sql = NovaSql::connect("sqlite::memory:", false)
+        .await
+        .with_cache_store(cache);
 
     // Use cached_json with a fetcher that returns a simple JSON value.
     let value = sql
