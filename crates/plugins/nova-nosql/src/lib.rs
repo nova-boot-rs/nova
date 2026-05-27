@@ -21,3 +21,6 @@ pub use wrapper::NovaNoSql;
 
 #[cfg(test)]
 mod tests;
+
+mod extractors;
+pub use extractors::NovaDocs;

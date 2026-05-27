@@ -22,5 +22,8 @@ pub use tenant_middleware::*;
 pub use tenant_resolvers::*;
 pub use tenant_scope::*;
 
+mod extractors;
+pub use extractors::NovaDb;
+
 #[cfg(test)]
 mod tests;

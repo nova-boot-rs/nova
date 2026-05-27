@@ -144,6 +144,12 @@ impl NovaSql {
     where
         M: MigratorTrait,
     {
+        if attempts == 0 {
+            return Err(DbErr::Custom(
+                "run_migrations_with_retry requires at least one attempt".to_string(),
+            ));
+        }
+
         let mut last_err = None;
         for _ in 0..attempts {
             match M::up(&self.db, None).await {
@@ -156,5 +162,38 @@ impl NovaSql {
         }
 
         Err(last_err.expect("migration attempts failed but no error captured"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NovaSql;
+    use sea_orm::DbErr;
+    use sea_orm_migration::prelude::{MigrationTrait, MigratorTrait};
+    use std::time::Duration;
+
+    struct DummyMigrator;
+
+    impl MigratorTrait for DummyMigrator {
+        fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+            Vec::new()
+        }
+    }
+
+    #[tokio::test]
+    async fn run_migrations_with_retry_returns_error_for_zero_attempts() {
+        let sql = NovaSql::connect("sqlite::memory:", false).await;
+
+        let err = sql
+            .run_migrations_with_retry::<DummyMigrator>(0, Duration::from_millis(1))
+            .await
+            .expect_err("expected an explicit error for zero attempts");
+
+        match err {
+            DbErr::Custom(message) => {
+                assert!(message.contains("at least one attempt"));
+            }
+            other => panic!("unexpected error: {other:?}"),
+        }
     }
 }

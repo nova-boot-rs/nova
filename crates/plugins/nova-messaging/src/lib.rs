@@ -21,3 +21,6 @@ pub use wrapper::NovaMessaging;
 
 #[cfg(test)]
 mod tests;
+
+mod extractors;
+pub use extractors::NovaBus;

@@ -1,8 +1,9 @@
 use crate::app_state::{AppState, RuntimeConfig};
 use nova_core::{
-    Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, Serialize,
-    axum::Extension, axum::extract::Query, axum::http::StatusCode, get, post,
+    Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, NovaState, Serialize,
+    axum::extract::Query, axum::http::StatusCode, get, post,
 };
+use nova_sql::NovaDb;
 
 use nova_middleware::{
     ApiResponse, ApiVersion, ListResponse, PaginatedResponse, PaginationQuery, VersionedResponse,
@@ -130,7 +131,7 @@ pub async fn echo(
 /// Get all users with error handling and structured response
 #[get("/users")]
 pub async fn get_users(
-    Extension(pool): Extension<nova_sql::ReadWritePool>,
+    NovaDb(pool): NovaDb,
 ) -> NovaResult<Json<ApiResponse<ListResponse<UserResponse>>>> {
     let db = pool.read().await;
     let rows: Vec<sea_orm::QueryResult> = db
@@ -175,7 +176,7 @@ pub async fn get_users(
 #[get("/users-paged")]
 pub async fn get_users_paged(
     Query(pagination): Query<PaginationQuery>,
-    Extension(pool): Extension<nova_sql::ReadWritePool>,
+    NovaDb(pool): NovaDb,
 ) -> NovaResult<Json<ApiResponse<PaginatedResponse<UserResponse>>>> {
     let db = pool.read().await;
     let rows: Vec<sea_orm::QueryResult> = db
@@ -237,9 +238,7 @@ pub async fn versioned_hello(
 
 /// Check database connection status
 #[get("/db-status")]
-pub async fn check_db(
-    Extension(pool): Extension<nova_sql::ReadWritePool>,
-) -> Json<ApiResponse<serde_json::Value>> {
+pub async fn check_db(NovaDb(pool): NovaDb) -> Json<ApiResponse<serde_json::Value>> {
     let db = pool.read().await;
     let backend = db.get_database_backend();
     let status = serde_json::json!({
@@ -252,7 +251,7 @@ pub async fn check_db(
 /// Returns the current runtime config loaded by the hot reloader.
 #[get("/runtime-config")]
 pub async fn runtime_config(
-    Extension(state): Extension<AppState>,
+    NovaState(state): NovaState<AppState>,
 ) -> Json<ApiResponse<RuntimeConfig>> {
     let current = state.runtime_config.get().await;
     Json(ApiResponse::with_status(StatusCode::OK, current))
@@ -260,7 +259,7 @@ pub async fn runtime_config(
 
 #[post("/users")]
 pub async fn create_user(
-    Extension(_pool): Extension<nova_sql::ReadWritePool>,
+    NovaDb(_pool): NovaDb,
     Json(payload): Json<CreateUser>,
 ) -> NovaResult<Json<ApiResponse<UserResponse>>> {
     validate_request(&payload)?;

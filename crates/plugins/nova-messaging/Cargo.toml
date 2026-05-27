@@ -14,3 +14,4 @@ async-nats = "0.38"
 lapin = "2"
 rdkafka = { version = "0.39", features = ["cmake-build", "curl-static"] }
 futures-util = "0.3"
+axum.workspace = true

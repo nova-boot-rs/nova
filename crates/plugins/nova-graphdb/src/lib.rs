@@ -21,3 +21,6 @@ pub use wrapper::{NovaGraphDb, graph_to_json};
 
 #[cfg(test)]
 mod tests;
+
+mod extractors;
+pub use extractors::NovaGraph;

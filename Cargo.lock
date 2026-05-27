@@ -2709,6 +2709,7 @@ name = "nova-graphdb"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "axum 0.8.9",
  "nova-core",
  "reqwest",
  "serde",
@@ -2731,6 +2732,7 @@ version = "0.1.0"
 dependencies = [
  "async-nats",
  "async-trait",
+ "axum 0.8.9",
  "futures-util",
  "lapin",
  "nova-core",
@@ -2759,6 +2761,7 @@ name = "nova-nosql"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "axum 0.8.9",
  "futures-util",
  "mongodb",
  "nova-core",

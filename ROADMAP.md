@@ -82,6 +82,11 @@ Make services robust against failure and connect to storage.
 - [DONE] Event envelope standard
 - [DONE] Dead letter queue support
 
+### Request Extractors (DONE)
+- [DONE] `NovaState<S>` app-state extractor in `nova-core`
+- [DONE] Named plugin extractors for `NovaSql`, `NovaNoSql`, `NovaGraphDb`, and `NovaMessaging`
+- [DONE] Demo updated to use semantic extractors instead of raw `Extension<T>` for plugin resources
+
 ### Cross-Cutting Data (DONE)
 - [DONE] CQRS command/query separation helpers
 - [DONE] Event sourcing primitives

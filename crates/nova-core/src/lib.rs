@@ -7,6 +7,7 @@ pub use serde::{Deserialize, Serialize};
 pub mod config;
 pub mod error;
 pub mod runtime;
+pub mod state;
 pub mod traits;
 
 // Error handling and response modules
@@ -28,6 +29,8 @@ pub use runtime::{NovaApp, NovaRoute};
 pub use traits::{
     NovaLifecycle, NovaModule, NovaPlugin, NovaRequestModel, NovaResponseModel, NovaRouterExtender,
 };
+
+pub use state::NovaState;
 
 // Observability plugin lives in `crates/nova-observability` to avoid cycles.
 
