@@ -35,8 +35,8 @@ async-trait.workspace = true
 sea-orm = { workspace = true, optional = true }
 
 # Internal Macros
-nova-macros = { path = "../nova-macros" }
-nova-resilience-store = { path = "../nova-resilience-store" }
+nova-macros = { path = "../nova-macros", version = "0.1.0" }
+nova-resilience-store = { path = "../nova-resilience-store", version = "0.1.0" }
 
 [dev-dependencies]
 serial_test = "3.4"

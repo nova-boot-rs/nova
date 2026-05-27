@@ -14,8 +14,8 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nova-core = { path = "../nova-core" }
-nova-resilience-store = { path = "../nova-resilience-store" }
+nova-core = { path = "../nova-core", version = "0.1.0" }
+nova-resilience-store = { path = "../nova-resilience-store", version = "0.1.0" }
 serde_json.workspace = true
 axum.workspace = true
 async-trait.workspace = true
