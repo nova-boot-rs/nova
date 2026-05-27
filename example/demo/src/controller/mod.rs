@@ -5,10 +5,10 @@ use nova_boot::{
 };
 use nova_sql::NovaDb;
 
-use nova_middleware::{
+use nova_boot_middleware::{
     ApiResponse, ApiVersion, ListResponse, PaginatedResponse, PaginationQuery, VersionedResponse,
 };
-use nova_middleware::{
+use nova_boot_middleware::{
     NovaValidate, ValidationErrors, max_length, min_length, required_string, validate_request,
 };
 

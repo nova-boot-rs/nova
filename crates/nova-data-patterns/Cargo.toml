@@ -1,5 +1,5 @@
 [package]
-name = "nova-data-patterns"
+name = "nova-boot-data-patterns"
 edition.workspace = true
 version.workspace = true
 description = "CQRS, event sourcing and saga patterns for Nova"
@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 nova-boot = { path = "../nova-boot", version = "0.1.0" }
 nova-sql = { path = "../plugins/nova-sql", version = "0.1.0", optional = true }
 nova-nosql = { path = "../plugins/nova-nosql", version = "0.1.0", optional = true }
-nova-messaging = { path = "../plugins/nova-messaging", version = "0.1.0", optional = true }
+nova-boot-messaging = { path = "../plugins/nova-messaging", version = "0.1.0", optional = true }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -29,5 +29,5 @@ redis = { workspace = true, optional = true }
 default = []
 sql-bridge = ["nova-sql"]
 nosql-bridge = ["nova-nosql"]
-messaging-bridge = ["nova-messaging"]
+messaging-bridge = ["nova-boot-messaging"]
 redis-store = ["dep:redis"]

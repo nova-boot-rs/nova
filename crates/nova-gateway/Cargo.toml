@@ -1,5 +1,5 @@
 [package]
-name = "nova-gateway"
+name = "nova-boot-gateway"
 edition.workspace = true
 version.workspace = true
 description = "API gateway helpers and integrations for Nova"

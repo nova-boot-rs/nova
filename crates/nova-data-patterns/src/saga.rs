@@ -76,7 +76,7 @@ pub struct SagaExecution {
 // ---------------------------------------------------------------------------
 
 #[cfg(feature = "messaging-bridge")]
-pub use nova_messaging::MessageBroker;
+pub use nova_boot_messaging::MessageBroker;
 
 #[cfg(feature = "messaging-bridge")]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -279,7 +279,7 @@ impl<M: MessageBroker> SagaCoordinator<M> {
 
     /// Publish a saga lifecycle event to topic `saga.{saga_id}.{step}.{status}`.
     async fn publish_event(&self, saga_id: &str, step: &str, status: &str) {
-        use nova_messaging::EventEnvelope;
+        use nova_boot_messaging::EventEnvelope;
         let topic = format!("saga.{saga_id}.{step}.{status}");
         let payload = serde_json::json!({
             "saga_id": saga_id,
@@ -549,7 +549,7 @@ mod tests {
     #[cfg(feature = "messaging-bridge")]
     mod messaging_tests {
         use super::*;
-        use nova_messaging::{InMemoryBroker, MessageBroker};
+        use nova_boot_messaging::{InMemoryBroker, MessageBroker};
 
         #[tokio::test]
         async fn coordinator_publishes_events_for_each_step() {

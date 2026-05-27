@@ -1,5 +1,5 @@
 [package]
-name = "nova-auth"
+name = "nova-boot-auth"
 edition.workspace = true
 version.workspace = true
 description = "Authentication helpers and middleware for Nova"

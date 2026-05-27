@@ -18,7 +18,7 @@ axum = "0.8"
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 nova-boot = { path = "../../crates/nova-boot" }
-nova-middleware = { path = "../../crates/nova-middleware" }
+nova-boot-middleware = { path = "../../crates/nova-middleware" }
 nova-observability = { path = "../../crates/nova-observability" }
 nova-sql = { path = "../../crates/plugins/nova-sql" }
 sea-orm = { version = "1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }

@@ -355,7 +355,7 @@ crates/
 │   ├── nova-sql/               # Phase 4
 │   ├── nova-nosql/             # Phase 4
 │   ├── nova-graphdb/           # Phase 4
-│   └── nova-messaging/         # Phase 4
+│   └── nova-boot-messaging/         # Phase 4
 ├── discovery/
 │   ├── nova-discovery/         # Phase 5 (trait)
 │   ├── nova-discovery-consul/  # Phase 5

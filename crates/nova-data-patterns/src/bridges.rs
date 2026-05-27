@@ -351,7 +351,7 @@ impl QueryStore for NoSqlQueryStore {
 
 #[cfg(feature = "messaging-bridge")]
 pub struct MessagingSagaBus {
-    messaging: nova_messaging::NovaMessaging,
+    messaging: nova_boot_messaging::NovaMessaging,
 }
 
 #[cfg(feature = "messaging-bridge")]
@@ -359,7 +359,7 @@ use serde::Serialize;
 
 #[cfg(feature = "messaging-bridge")]
 impl MessagingSagaBus {
-    pub fn new(messaging: nova_messaging::NovaMessaging) -> Self {
+    pub fn new(messaging: nova_boot_messaging::NovaMessaging) -> Self {
         Self { messaging }
     }
 

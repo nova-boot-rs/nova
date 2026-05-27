@@ -1,4 +1,4 @@
-use nova_messaging::{EventEnvelope, NovaMessaging};
+use nova_boot_messaging::{EventEnvelope, NovaMessaging};
 use std::time::Duration;
 
 #[tokio::test]

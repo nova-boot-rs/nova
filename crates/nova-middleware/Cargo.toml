@@ -1,5 +1,5 @@
 [package]
-name = "nova-middleware"
+name = "nova-boot-middleware"
 edition.workspace = true
 version.workspace = true
 description = "Middleware components (rate limiting, validation) for Nova"

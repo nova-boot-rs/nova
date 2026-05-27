@@ -1,5 +1,5 @@
 [package]
-name = "nova-discovery"
+name = "nova-boot-discovery"
 edition.workspace = true
 version.workspace = true
 description = "Service discovery primitives for Nova"

@@ -1140,11 +1140,11 @@ checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
 name = "demo"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum 0.8.9",
  "nova-boot",
- "nova-middleware",
+ "nova-boot-middleware",
  "nova-observability",
  "nova-sql",
  "sea-orm",
@@ -2609,12 +2609,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-auth"
-version = "0.1.0"
-
-[[package]]
 name = "nova-boot"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -2634,20 +2630,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-cli"
-version = "0.1.0"
+name = "nova-boot-auth"
+version = "0.1.1"
 
 [[package]]
-name = "nova-client"
-version = "0.1.0"
+name = "nova-boot-cli"
+version = "0.1.1"
 
 [[package]]
-name = "nova-data-patterns"
-version = "0.1.0"
+name = "nova-boot-client"
+version = "0.1.1"
+
+[[package]]
+name = "nova-boot-data-patterns"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "nova-boot",
- "nova-messaging",
+ "nova-boot-messaging",
  "nova-nosql",
  "nova-sql",
  "redis",
@@ -2658,77 +2658,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-discovery"
-version = "0.1.0"
+name = "nova-boot-discovery"
+version = "0.1.1"
 
 [[package]]
-name = "nova-discovery-consul"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "nova-boot",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
+name = "nova-boot-gateway"
+version = "0.1.1"
 
 [[package]]
-name = "nova-discovery-dns"
-version = "0.1.0"
-
-[[package]]
-name = "nova-discovery-etcd"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "etcd-client",
- "nova-boot",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "nova-discovery-static"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "nova-boot",
- "tokio",
-]
-
-[[package]]
-name = "nova-gateway"
-version = "0.1.0"
-
-[[package]]
-name = "nova-graphdb"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum 0.8.9",
- "nova-boot",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "nova-macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "nova-messaging"
-version = "0.1.0"
+name = "nova-boot-messaging"
+version = "0.1.1"
 dependencies = [
  "async-nats",
  "async-trait",
@@ -2744,8 +2683,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-middleware"
-version = "0.1.0"
+name = "nova-boot-middleware"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -2757,8 +2696,73 @@ dependencies = [
 ]
 
 [[package]]
+name = "nova-boot-test"
+version = "0.1.1"
+
+[[package]]
+name = "nova-discovery-consul"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "nova-boot",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "nova-discovery-dns"
+version = "0.1.1"
+
+[[package]]
+name = "nova-discovery-etcd"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "etcd-client",
+ "nova-boot",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "nova-discovery-static"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "nova-boot",
+ "tokio",
+]
+
+[[package]]
+name = "nova-graphdb"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "axum 0.8.9",
+ "nova-boot",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "nova-macros"
+version = "0.1.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "nova-nosql"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -2773,7 +2777,7 @@ dependencies = [
 
 [[package]]
 name = "nova-observability"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum 0.8.9",
  "inventory",
@@ -2786,7 +2790,7 @@ dependencies = [
 
 [[package]]
 name = "nova-resilience-store"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "redis",
@@ -2794,7 +2798,7 @@ dependencies = [
 
 [[package]]
 name = "nova-sql"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -2807,10 +2811,6 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
-
-[[package]]
-name = "nova-test"
-version = "0.1.0"
 
 [[package]]
 name = "nu-ansi-term"

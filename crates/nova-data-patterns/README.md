@@ -6,7 +6,7 @@ Purpose
 
 Quick start
 
-- Use `nova-data-patterns` together with `nova-sql`/`nova-messaging` to implement commands, events, and sagas.
+- Use `nova-data-patterns` together with `nova-sql`/`nova-boot-messaging` to implement commands, events, and sagas.
 
 Highlights
 

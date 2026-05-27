@@ -1,4 +1,4 @@
-# `nova-messaging`
+# `nova-boot-messaging`
 
 Purpose
 
@@ -7,7 +7,7 @@ Purpose
 Quick start
 
 ```rust
-use nova_messaging::NovaMessaging;
+use nova_boot_messaging::NovaMessaging;
 let bus = NovaMessaging::in_memory();
 NovaApp::new("svc", 8080, state).add_plugin(bus).run().await;
 ```

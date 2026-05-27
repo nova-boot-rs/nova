@@ -1,4 +1,4 @@
-use nova_messaging::{EventEnvelope, InMemoryBroker, MessageBroker};
+use nova_boot_messaging::{EventEnvelope, InMemoryBroker, MessageBroker};
 
 #[tokio::main]
 async fn main() {

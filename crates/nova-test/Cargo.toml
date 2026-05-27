@@ -1,5 +1,5 @@
 [package]
-name = "nova-test"
+name = "nova-boot-test"
 edition.workspace = true
 version.workspace = true
 description = "Testing helpers and test utilities for Nova"

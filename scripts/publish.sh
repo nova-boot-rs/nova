@@ -6,12 +6,12 @@ CRATES=(
     "nova-resilience-store"
     "nova-boot"
     "nova-observability"
-    "nova-middleware"
+    "nova-boot-middleware"
     "nova-sql"
     "nova-nosql"
     "nova-graphdb"
-    "nova-messaging"
-    "nova-data-patterns"
+    "nova-boot-messaging"
+    "nova-boot-data-patterns"
 )
 
 set -a

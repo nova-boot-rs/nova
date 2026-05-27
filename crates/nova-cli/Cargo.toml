@@ -1,5 +1,5 @@
 [package]
-name = "nova-cli"
+name = "nova-boot-cli"
 edition.workspace = true
 version.workspace = true
 description = "Command-line utilities for Nova projects"

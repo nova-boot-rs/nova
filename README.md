@@ -23,7 +23,7 @@ nova-boot = "0.2"
 # add plugin crates as needed
 nova-sql = "0.2"          # optional: SQL support (SeaORM)
 nova-nosql = "0.2"        # optional: NoSQL adapters
-nova-messaging = "0.2"    # optional: Kafka/RabbitMQ/NATS
+nova-boot-messaging = "0.2"    # optional: Kafka/RabbitMQ/NATS
 nova-observability = "0.2" # optional: tracing, metrics, OpenAPI
 ```
 
@@ -90,7 +90,7 @@ cargo run --bin hello-service
 
 - Plugin architecture: modular runtime with `NovaPlugin` for middleware and services.
 - Storage: `nova-sql`, `nova-nosql`, `nova-graphdb` (SeaORM, MongoDB, Neo4j, etc.).
-- Messaging: `nova-messaging` with Kafka / RabbitMQ / NATS + DLQ support.
+- Messaging: `nova-boot-messaging` with Kafka / RabbitMQ / NATS + DLQ support.
 - Resilience: circuit breaker, retries, bulkheads, distributed rate limiting.
 - Observability: structured logging, tracing, Prometheus metrics, OpenAPI hooks.
 - Developer ergonomics: `#[get|post]`, `#[validate]`, and semantic request extractors.
@@ -104,7 +104,7 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 - `nova-boot` — runtime, plugin trait, app lifecycle
 - `nova-macros` — routing & validation macros
-- `nova-sql`, `nova-nosql`, `nova-graphdb`, `nova-messaging` — data & messaging plugins
+- `nova-sql`, `nova-nosql`, `nova-graphdb`, `nova-boot-messaging` — data & messaging plugins
 - `nova-observability` — tracing, metrics, OpenAPI
 - `nova-client` — discovery-aware HTTP client
 - `nova-test` — integration test harness (reprioritized)
@@ -123,7 +123,7 @@ See the `crates/` folder for all workspace members. Notable crates:
 | `nova-sql` | SeaORM integration with read/write splitting and caching |
 | `nova-nosql` | Document & key‑value stores (MongoDB, Redis) |
 | `nova-graphdb` | Graph databases (Neo4j, SurrealDB) |
-| `nova-messaging` | Kafka, RabbitMQ, NATS with DLQ support |
+| `nova-boot-messaging` | Kafka, RabbitMQ, NATS with DLQ support |
 | `nova-data-patterns` | CQRS, Event Sourcing, Saga |
 | `nova-discovery` | Service discovery trait and backends (Consul, etcd, DNS, static) |
 | `nova-client` | Smart HTTP client with discovery‑aware load balancing |

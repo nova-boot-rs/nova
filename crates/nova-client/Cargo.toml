@@ -1,5 +1,5 @@
 [package]
-name = "nova-client"
+name = "nova-boot-client"
 edition.workspace = true
 version.workspace = true
 description = "Client helpers for communicating with Nova services"

@@ -1,4 +1,4 @@
-use nova_messaging::{EventEnvelope, NovaMessaging};
+use nova_boot_messaging::{EventEnvelope, NovaMessaging};
 
 #[tokio::test]
 async fn rabbitmq_publish_poll_and_dlq_roundtrip() {
