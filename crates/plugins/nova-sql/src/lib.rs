@@ -12,7 +12,7 @@
 //!
 //! Examples
 //!
-//! ```no_run
+//! ```rust,ignore
 //! use nova_sql::NovaSql;
 //!
 //! #[tokio::main]

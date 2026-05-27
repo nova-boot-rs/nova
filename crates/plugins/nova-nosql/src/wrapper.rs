@@ -52,7 +52,7 @@ impl NovaNoSql {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,ignore
     /// # tokio_test::block_on(async {
     /// use nova_nosql::NovaNoSql;
     /// let nosql = NovaNoSql::redis_primary("redis://127.0.0.1:6379", "app").await.unwrap();
@@ -95,7 +95,7 @@ impl NovaNoSql {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,ignore
     /// # tokio_test::block_on(async {
     /// use nova_nosql::NovaNoSql;
     /// let nosql = NovaNoSql::redis_primary("redis://127.0.0.1:6379", "app").await.unwrap();

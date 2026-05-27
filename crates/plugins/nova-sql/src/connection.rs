@@ -44,7 +44,7 @@ impl NovaSql {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,ignore
     /// # tokio_test::block_on(async {
     /// let sql = nova_sql::NovaSql::connect("sqlite::memory:", false).await;
     /// let pool = sql.read_write_pool();

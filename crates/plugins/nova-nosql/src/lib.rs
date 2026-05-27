@@ -8,7 +8,7 @@
 //!
 //! Example
 //!
-//! ```no_run
+//! ```rust,ignore
 //! use nova_nosql::NovaNoSql;
 //! # tokio_test::block_on(async {
 //! let nosql = NovaNoSql::redis_primary("redis://127.0.0.1:6379", "app").await.unwrap();

@@ -34,12 +34,15 @@ request handlers.</li>
     </span><span class="kw">let </span>_write = pool.write();
     <span class="kw">let </span>_read = pool.read().<span class="kw">await</span>;
 
-    <span class="macro">println!</span>(<span class="string">"connected to database; replicas={}"</span>, sql.replica_count().<span class="kw">await</span>);
+    <span class="macro">println!</span>(
+        <span class="string">"connected to database; replicas={}"</span>,
+        sql.replica_count().<span class="kw">await
+    </span>);
 }
 </code></pre></div><h2 id="example-migrations"><a class="doc-anchor" href="#example-migrations">§</a>Example: migrations</h2>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>nova_sql::NovaSql;
-<span class="kw">use </span>sea_orm_migration::prelude::{MigrationTrait, MigratorTrait};
 <span class="kw">use </span>sea_orm::DbErr;
+<span class="kw">use </span>sea_orm_migration::prelude::{MigrationTrait, MigratorTrait};
 <span class="kw">use </span>std::time::Duration;
 
 <span class="kw">struct </span>DummyMigrator;
@@ -74,7 +77,9 @@ request handlers.</li>
 </span><span class="kw">async fn </span>main() {
     <span class="kw">let </span>cache: Arc&lt;<span class="kw">dyn </span>nova_sql::cache::QueryCacheStore&gt; = Arc::new(InMemoryQueryCache::default());
 
-    <span class="kw">let </span>sql = NovaSql::connect(<span class="string">"sqlite::memory:"</span>, <span class="bool-val">false</span>).<span class="kw">await</span>.with_cache_store(cache);
+    <span class="kw">let </span>sql = NovaSql::connect(<span class="string">"sqlite::memory:"</span>, <span class="bool-val">false</span>)
+        .<span class="kw">await
+        </span>.with_cache_store(cache);
 
     <span class="comment">// Use cached_json with a fetcher that returns a simple JSON value.
     </span><span class="kw">let </span>value = sql

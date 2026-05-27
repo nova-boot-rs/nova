@@ -19,7 +19,9 @@ faster reads.</p>
         <span class="prelude-val">Ok</span>(nosql) =&gt; {
             <span class="macro">println!</span>(<span class="string">"connected to redis-backed NovaNoSql"</span>);
             <span class="comment">// Try a dummy upsert &amp; get flow using JSON strings
-            </span><span class="kw">let _ </span>= nosql.upsert(<span class="string">"demo"</span>, <span class="string">"id1"</span>, <span class="kw-2">&amp;</span><span class="macro">serde_json::json!</span>({<span class="string">"hello"</span>:<span class="string">"world"</span>})).<span class="kw">await</span>;
+            </span><span class="kw">let _ </span>= nosql
+                .upsert(<span class="string">"demo"</span>, <span class="string">"id1"</span>, <span class="kw-2">&amp;</span><span class="macro">serde_json::json!</span>({<span class="string">"hello"</span>:<span class="string">"world"</span>}))
+                .<span class="kw">await</span>;
         }
         <span class="prelude-val">Err</span>(e) =&gt; {
             <span class="macro">eprintln!</span>(<span class="string">"failed to construct NovaNoSql: {}"</span>, e);

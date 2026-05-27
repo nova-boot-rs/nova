@@ -5,7 +5,7 @@ that application handlers can extract to execute queries, upsert nodes and
 edges, and traverse subgraphs. The crate also supplies lightweight
 builders and types used across adapters.</p>
 <h2 id="example-simple"><a class="doc-anchor" href="#example-simple">§</a>Example: simple</h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>nova_graphdb::{NovaGraphDb, GraphNode, GraphEdge};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>nova_graphdb::{GraphEdge, GraphNode, NovaGraphDb};
 <span class="kw">use </span>std::collections::HashMap;
 
 <span class="attr">#[tokio::main]
