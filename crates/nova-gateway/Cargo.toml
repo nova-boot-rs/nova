@@ -1,0 +1,16 @@
+[package]
+name = "nova-gateway"
+edition.workspace = true
+version.workspace = true
+description = "API gateway helpers and integrations for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]

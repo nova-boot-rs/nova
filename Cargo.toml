@@ -1,15 +1,55 @@
 [workspace]
 members = [
-    "crates/nova-core", "crates/nova-macros", "crates/nova-sql", "example/demo",
+    "crates/nova-core",
+    "crates/nova-macros",
+    "crates/nova-middleware",
+    "crates/nova-observability",
+    "crates/nova-resilience-store",
+    "crates/plugins/*",
+    "crates/discovery/*",
+    "crates/nova-client",
+    "crates/nova-gateway",
+    "crates/nova-auth",
+    "crates/nova-cli",
+    "crates/nova-test",
+    "example/demo", "crates/nova-data-patterns",
 ]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
 version = "0.1.0"
+license = "MIT"
+repository = "https://github.com/nova-boot-rs/nova"
 
 [workspace.dependencies]
-# Define versions here once so all plugins stay in sync
-tokio = { version = "1.0", features = ["full"] }
+# The Web Engine
 axum = "0.8"
+axum-server = "0.8"
+tokio = { version = "1.0", features = ["full"] }
+tokio-rustls = "0.26"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors"] }
+inventory = "0.3"
+
+# Serialization & Utilities
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+etcd-client = "0.14"
+
+# Database support (optional)
+sea-orm = "1.1"
+sea-orm-migration = "1.1"
+sea-query = "0.32"
+
+# Internal Macros
+syn = { version = "2.0", features = ["full"] } 
+quote = "1.0"                                 
+proc-macro2 = "1.0"
+
+
+redis = "0.23"

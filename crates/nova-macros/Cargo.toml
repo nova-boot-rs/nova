@@ -2,11 +2,21 @@
 name = "nova-macros"
 edition.workspace = true
 version.workspace = true
+description = "Proc-macro helpers and route/derive macros for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 proc-macro = true # Crucial: This tells Rust this is a macro crate
 
 [dependencies]
-syn = { version = "2.0", features = ["full"] } # Parses Rust code into a tree
-quote = "1.0"                                  # Turns that tree back into code
-proc-macro2 = "1.0"
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true

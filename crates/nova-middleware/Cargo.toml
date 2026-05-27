@@ -1,0 +1,23 @@
+[package]
+name = "nova-middleware"
+edition.workspace = true
+version.workspace = true
+description = "Middleware components (rate limiting, validation) for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nova-core = { path = "../nova-core" }
+nova-resilience-store = { path = "../nova-resilience-store" }
+serde_json.workspace = true
+axum.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+serde.workspace = true

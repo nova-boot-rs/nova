@@ -1,0 +1,173 @@
+on:
+    push:
+        branches: [main, dev]
+    pull_request:
+        branches: [main]
+
+jobs:
+    ci:
+        runs-on: ubuntu-latest
+        services:
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            kafka:
+                image: confluentinc/cp-kafka:latest
+                ports:
+                    - 9092:9092
+                env:
+                    KAFKA_NODE_ID: 1
+                    KAFKA_PROCESS_ROLES: broker,controller
+                    KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+                    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092
+                    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+                    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+                    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+                    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+                    CLUSTER_ID: test-cluster-1
+                options: >-
+                    --health-cmd "kafka-topics --bootstrap-server localhost:9092 --list"
+                    --health-interval 10s
+                    --health-timeout 10s
+                    --health-retries 10
+
+            rabbitmq:
+                image: rabbitmq:3-management-alpine
+                ports:
+                    - 5672:5672
+                options: >-
+                    --health-cmd "rabbitmq-diagnostics check_port_connectivity"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            nats:
+                image: nats:alpine
+                ports:  
+                    - 4222:4222
+                options: >-
+                        --health-cmd "wget -q -O- http://localhost:8222/healthz"
+                        --health-interval 5s
+                        --health-timeout 3s
+                        --health-retries 5
+
+            neo4j:
+              image: neo4j:5-community
+              ports:
+                - 7474:7474
+                - 7687:7687
+              env:
+                NEO4J_AUTH: neo4j/nova-test-password
+              options: >-
+                --health-cmd "cypher-shell -u neo4j -p nova-test-password 'RETURN 1'"
+                --health-interval 10s
+                --health-timeout 10s
+                --health-retries 12
+
+            mongodb:
+              image: mongo:7
+              ports:
+                - 27017:27017
+              options: >-
+                --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok' || exit 1"
+                --health-interval 10s
+                --health-timeout 5s
+                --health-retries 12
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                components: rustfmt, clippy
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Install protoc
+              run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+            - name: Check formatting
+              run: cargo fmt --all --check
+
+            - name: Clippy
+              run: cargo clippy --workspace --all-features -- -D warnings
+
+            - name: Build
+              run: cargo build --workspace --all-features
+
+            - name: Unit tests
+              run: cargo test --workspace --all-features
+
+            - name: Redis integration tests
+              env:
+                NOVA_TEST_REDIS_URL: redis://127.0.0.1:6379/
+              run: cargo test -p nova-core --features redis-store -- --ignored redis
+
+            - name: Kafka integration tests
+              env:
+                NOVA_TEST_KAFKA_BROKERS: 127.0.0.1:9092
+              run: cargo test -p nova-messaging --test kafka_integration
+
+            - name: RabbitMQ integration tests
+              env:
+                NOVA_TEST_AMQP_URL: amqp://127.0.0.1:5672
+              run: cargo test -p nova-messaging --test rabbitmq_integration
+
+            - name: NATS integration tests
+              env:
+                NATS_URL: nats://127.0.0.1:4222
+              run: cargo test -p nova-messaging --test nats_integration
+
+            - name: Neo4j integration tests
+              env:
+                NEO4J_URL: http://127.0.0.1:7474
+                NEO4J_USER: neo4j
+                NEO4J_PASSWORD: nova-test-password
+              run: cargo test -p nova-graphdb --test neo4j_integration
+
+            - name: Start SurrealDB
+              run: |
+                docker run -d --name surrealdb -p 8000:8000 surrealdb/surrealdb:latest \
+                  start --bind 0.0.0.0:8000 --user root --pass root memory
+
+                for i in {1..30}; do
+                  if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+                    echo "SurrealDB is ready"
+                    exit 0
+                  fi
+                  sleep 2
+                done
+
+                echo "SurrealDB did not become ready in time"
+                docker logs surrealdb
+                exit 1
+
+            - name: SurrealDB integration tests
+              env:
+                SURREALDB_URL: http://127.0.0.1:8000
+                SURREALDB_NS: nova
+                SURREALDB_DB: main
+                SURREALDB_USER: root
+                SURREALDB_PASSWORD: root
+              run: cargo test -p nova-graphdb --test surreal_integration
+
+            - name: SQL replica integration tests
+              run: cargo test -p nova-sql --test replica
+
+            - name: SQL Redis cache integration tests
+              env:
+                REDIS_URL: redis://127.0.0.1:6379/
+              run: cargo test -p nova-sql --test redis_integration
+
+            - name: NoSQL MongoDB integration tests
+              env:
+                NOVA_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+                NOVA_TEST_MONGODB_DB: nova_test
+              run: cargo test -p nova-nosql --test mongodb_integration
