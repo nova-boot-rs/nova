@@ -10,7 +10,7 @@
 
 The public API surface and fundamental abstractions.
 
-- [DONE] `nova-core` as the single public runtime surface
+- [DONE] `nova-boot` as the single public runtime surface
 - [DONE] Reusable traits: `Plugin`, `Request`, `Response`, `Error`
 - [DONE] Module split: configuration, observability, routing
 
@@ -83,7 +83,7 @@ Make services robust against failure and connect to storage.
 - [DONE] Dead letter queue support
 
 ### Request Extractors (DONE)
-- [DONE] `NovaState<S>` app-state extractor in `nova-core`
+- [DONE] `NovaState<S>` app-state extractor in `nova-boot`
 - [DONE] Named plugin extractors for `NovaSql`, `NovaNoSql`, `NovaGraphDb`, and `NovaMessaging`
 - [DONE] Demo updated to use semantic extractors instead of raw `Extension<T>` for plugin resources
 
@@ -99,7 +99,7 @@ Make services robust against failure and connect to storage.
 Let services find and talk to each other dynamically.
 
 ### Discovery Abstraction
-- [DONE] `Discovery` trait in `nova-core`
+- [DONE] `Discovery` trait in `nova-boot`
 - [DONE] Static list plugin for dev/testing (`nova-discovery-static`)
 - [DONE] Consul plugin (`nova-discovery-consul`)
 - [DONE] etcd plugin (`nova-discovery-etcd`)
@@ -241,7 +241,7 @@ Tools that make building with Nova fast and enjoyable.
 
 ### Documentation (NEW — prioritized)
 - [PLANNED] "Getting Started" tutorial (based on `example/demo/`)
-- [PLANNED] API reference for `nova-core` public types
+- [PLANNED] API reference for `nova-boot` public types
 - [PLANNED] "Why Nova?" comparison page vs. raw Axum
 - [PLANNED] `examples/rest-api` — Full RESTful CRUD service
 - [PLANNED] `examples/event-worker` — Event-driven worker
@@ -345,7 +345,7 @@ Security      Developer      Delivery &
 
 ```
 crates/
-├── nova-core/                  # Phase 1
+├── nova-boot/                  # Phase 1
 ├── nova-macros/                # Phase 3
 ├── nova-middleware/            # Phase 4
 ├── nova-observability/         # Phase 2-3

@@ -5,7 +5,7 @@
 //! under failure conditions.
 
 use async_trait::async_trait;
-use nova_core::{
+use nova_boot::{
     NovaError,
     config::{CircuitBreakerConfig, RateLimiterConfig, ResilienceBackend},
 };

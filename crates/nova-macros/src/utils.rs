@@ -36,7 +36,7 @@ pub fn request_model(input: TokenStream) -> TokenStream {
     let name = &input.ident;
 
     let expanded = quote! {
-        impl ::nova_core::NovaRequestModel for #name {}
+        impl ::nova_boot::NovaRequestModel for #name {}
     };
 
     TokenStream::from(expanded)
@@ -49,7 +49,7 @@ pub fn response_model(input: TokenStream) -> TokenStream {
     let name = &input.ident;
 
     let expanded = quote! {
-        impl ::nova_core::NovaResponseModel for #name {}
+        impl ::nova_boot::NovaResponseModel for #name {}
     };
 
     TokenStream::from(expanded)

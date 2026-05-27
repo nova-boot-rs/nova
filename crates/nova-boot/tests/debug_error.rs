@@ -13,7 +13,7 @@ async fn debug_mode_includes_details() {
         std::env::set_var("NOVA_DEBUG", "1");
     }
 
-    let err = nova_core::NovaError::InternalError("boom".into());
+    let err = nova_boot::NovaError::InternalError("boom".into());
     let resp = err.into_response();
 
     assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);

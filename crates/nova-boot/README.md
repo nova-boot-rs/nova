@@ -1,4 +1,4 @@
-# `nova-core`
+# `nova-boot`
 
 Purpose
 
@@ -9,7 +9,7 @@ Quick start
 - Construct `NovaApp`, add plugins, and run:
 
 ```rust
-use nova_core::prelude::*;
+use nova_boot::prelude::*;
 
 let state = AppState::new(...);
 NovaApp::new("my-service", 8080, state)
@@ -26,5 +26,5 @@ Highlights
 
 Docs & examples
 
-- API docs: `cargo doc --package nova-core --no-deps` (or browse generated docs).
+- API docs: `cargo doc --package nova-boot --no-deps` (or browse generated docs).
 - Examples: see top-level `example/` demo for usage patterns.

@@ -1,4 +1,4 @@
-use nova_core::{Deserialize, ReloadableConfig, Serialize};
+use nova_boot::{Deserialize, ReloadableConfig, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuntimeConfig {

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use nova_core::discovery::{
+use nova_boot::discovery::{
     Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
 };
 use std::collections::HashMap;

@@ -3,7 +3,7 @@
 //! Implement `NovaValidate` for your request types and use `validate_request`
 //! in controllers to convert validation results into `NovaResult<()>`.
 
-use nova_core::{NovaError, NovaResult};
+use nova_boot::{NovaError, NovaResult};
 
 /// Collector for validation errors that can be converted into a `NovaResult`.
 #[derive(Debug, Clone, Default)]

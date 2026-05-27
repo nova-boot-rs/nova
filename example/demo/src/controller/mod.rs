@@ -1,5 +1,5 @@
 use crate::app_state::{AppState, RuntimeConfig};
-use nova_core::{
+use nova_boot::{
     Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, NovaState, Serialize,
     axum::extract::Query, axum::http::StatusCode, get, post,
 };
@@ -25,7 +25,7 @@ fn demo_openapi_fragment() -> serde_json::Value {
     })
 }
 
-nova_core::inventory::submit! {
+nova_boot::inventory::submit! {
     nova_observability::OpenApiHook {
         name: "demo-tag-fragment",
         provider: demo_openapi_fragment,

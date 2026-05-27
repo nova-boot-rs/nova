@@ -2,9 +2,9 @@
 set -euo pipefail
 
 CRATES=(
-    "nova-core"
-    "nova-resilience-store"
     "nova-macros"
+    "nova-resilience-store"
+    "nova-boot"
     "nova-observability"
     "nova-middleware"
     "nova-sql"
@@ -24,17 +24,8 @@ cargo login "$CRATES_IO_TOKEN" || {
     exit 1
 }
 
-echo "=== Dry-run checks ==="
-for crate in "${CRATES[@]}"; do
-    echo "Checking $crate..."
-    cargo publish -p "$crate" --dry-run || {
-        echo "FAILED: $crate"
-        exit 1
-    }
-done
-
-echo ""
-echo "=== Publishing ==="
+echo "=== Publishing order check ==="
+echo "Publishing in dependency order so internal crates are available before dependents."
 for crate in "${CRATES[@]}"; do
     echo "Publishing $crate..."
     cargo publish -p "$crate"

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use etcd_client::{Client, DeleteOptions, EventType, GetOptions, PutOptions, WatchOptions};
-use nova_core::discovery::{
+use nova_boot::discovery::{
     Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
 };
 use serde::{Deserialize, Serialize};

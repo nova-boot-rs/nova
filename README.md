@@ -4,8 +4,8 @@
 
 Build resilient, observable, and scalable services with first-class plugins for databases, messaging, discovery, and resilience primitives. Nova reduces integration work so you can focus on business logic.
 
-<!-- [![Crates.io](https://img.shields.io/crates/v/nova-core)](https://crates.io/crates/nova-core) -->
-<!-- [![Docs](https://docs.rs/nova-core/badge.svg)](https://docs.rs/nova-core) -->
+<!-- [![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot) -->
+<!-- [![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot) -->
 [![CI](https://github.com/nova-boot/nova/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/nova/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 ---
@@ -19,7 +19,7 @@ Add the crates you need to `Cargo.toml` (choose plugins you need):
 
 ```toml
 [dependencies]
-nova-core = "0.2"
+nova-boot = "0.2"
 # add plugin crates as needed
 nova-sql = "0.2"          # optional: SQL support (SeaORM)
 nova-nosql = "0.2"        # optional: NoSQL adapters
@@ -50,7 +50,7 @@ Add the crates you need to `Cargo.toml`:
 
 ```toml
 [dependencies]
-nova-core = "0.2"
+nova-boot = "0.2"
 nova-sql = "0.2"
 nova-observability = "0.2"
 ```
@@ -58,7 +58,7 @@ nova-observability = "0.2"
 Create a minimal service:
 
 ```rust
-use nova_core::prelude::*;
+use nova_boot::prelude::*;
 use nova_sql::NovaSql;
 use nova_observability::ObservabilityPlugin;
 
@@ -102,7 +102,7 @@ cargo run --bin hello-service
 
 See the `crates/` folder for all workspace members. Notable crates:
 
-- `nova-core` — runtime, plugin trait, app lifecycle
+- `nova-boot` — runtime, plugin trait, app lifecycle
 - `nova-macros` — routing & validation macros
 - `nova-sql`, `nova-nosql`, `nova-graphdb`, `nova-messaging` — data & messaging plugins
 - `nova-observability` — tracing, metrics, OpenAPI
@@ -115,7 +115,7 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 | Crate | Purpose |
 |-------|---------|
-| `nova-core` | Runtime, plugin trait, app lifecycle, configuration |
+| `nova-boot` | Runtime, plugin trait, app lifecycle, configuration |
 | `nova-macros` | Routing, validation, and service macros |
 | `nova-observability` | Tracing, metrics, OpenAPI |
 | `nova-middleware` | Rate limiting, circuit breaker, retry |

@@ -14,7 +14,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nova-core = { path = "../../nova-core" }
+nova-boot = { path = "../../nova-boot" }
 async-trait.workspace = true
 reqwest.workspace = true
 serde.workspace = true

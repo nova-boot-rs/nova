@@ -1,4 +1,4 @@
-use nova_core::{NovaApp, spawn_json_file_hot_reloader};
+use nova_boot::{NovaApp, spawn_json_file_hot_reloader};
 use nova_sql::*;
 use std::time::Duration;
 

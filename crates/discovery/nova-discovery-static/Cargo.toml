@@ -14,6 +14,6 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nova-core = { path = "../../nova-core" }
+nova-boot = { path = "../../nova-boot" }
 async-trait.workspace = true
 tokio = { workspace = true, features = ["sync", "rt", "macros"] }

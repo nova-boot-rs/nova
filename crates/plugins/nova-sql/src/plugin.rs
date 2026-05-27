@@ -1,5 +1,5 @@
 use crate::{connection::NovaSql, pool::ReadWritePool, tenant_middleware::tenant_middleware};
-use nova_core::{NovaPlugin, async_trait, axum::Extension, axum::Router, axum::middleware};
+use nova_boot::{NovaPlugin, async_trait, axum::Extension, axum::Router, axum::middleware};
 use std::sync::Arc;
 
 /// Plugin integration for Nova applications.

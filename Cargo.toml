@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/nova-core",
+    "crates/nova-boot",
     "crates/nova-macros",
     "crates/nova-middleware",
     "crates/nova-observability",

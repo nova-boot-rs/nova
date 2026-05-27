@@ -20,4 +20,4 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 inventory.workspace = true
 serde_json.workspace = true
-nova-core = { path = "../nova-core", version = "0.1.0" }
+nova-boot = { path = "../nova-boot", version = "0.1.0" }

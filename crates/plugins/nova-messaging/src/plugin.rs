@@ -1,5 +1,5 @@
 use crate::NovaMessaging;
-use nova_core::{NovaPlugin, async_trait as nova_async_trait, axum::Extension, axum::Router};
+use nova_boot::{NovaPlugin, async_trait as nova_async_trait, axum::Extension, axum::Router};
 
 /// Messaging plugin wiring.
 ///

@@ -1,6 +1,6 @@
 #![cfg(feature = "redis-store")]
 
-use nova_core::{RedisStore, ResilienceStore};
+use nova_boot::{RedisStore, ResilienceStore};
 use std::env;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};

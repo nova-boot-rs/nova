@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use nova_core::discovery::{
+use nova_boot::discovery::{
     Discovery, DiscoveryError, InstanceStatus, ServiceInstance, WatchStream,
 };
 use serde::Deserialize;
@@ -366,7 +366,7 @@ impl Discovery for ConsulDiscovery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nova_core::discovery::DiscoveryError;
+    use nova_boot::discovery::DiscoveryError;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     fn discovery() -> ConsulDiscovery {

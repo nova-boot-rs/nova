@@ -5,7 +5,7 @@
 use axum::Json;
 use axum::middleware;
 use axum::routing::get;
-use nova_core::{NovaPlugin, async_trait, axum::Router};
+use nova_boot::{NovaPlugin, async_trait, axum::Router};
 use tower_http::trace::TraceLayer;
 
 use crate::{attach_request_context, build_openapi_document, init_tracing, request_id_layer};

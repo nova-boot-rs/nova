@@ -12,19 +12,19 @@ use syn::{ItemFn, LitStr, parse_macro_input};
 fn route_macro(method: &str, path: String, handler: ItemFn) -> TokenStream {
     let fn_name = &handler.sig.ident;
     let route_expr = match method {
-        "GET" => quote!(::nova_core::axum::routing::get(#fn_name)),
-        "POST" => quote!(::nova_core::axum::routing::post(#fn_name)),
-        "PUT" => quote!(::nova_core::axum::routing::put(#fn_name)),
-        "DELETE" => quote!(::nova_core::axum::routing::delete(#fn_name)),
-        "PATCH" => quote!(::nova_core::axum::routing::patch(#fn_name)),
-        _ => quote!(::nova_core::axum::routing::get(#fn_name)),
+        "GET" => quote!(::nova_boot::axum::routing::get(#fn_name)),
+        "POST" => quote!(::nova_boot::axum::routing::post(#fn_name)),
+        "PUT" => quote!(::nova_boot::axum::routing::put(#fn_name)),
+        "DELETE" => quote!(::nova_boot::axum::routing::delete(#fn_name)),
+        "PATCH" => quote!(::nova_boot::axum::routing::patch(#fn_name)),
+        _ => quote!(::nova_boot::axum::routing::get(#fn_name)),
     };
 
     let expanded = quote! {
         #handler
 
-        ::nova_core::inventory::submit! {
-            ::nova_core::NovaRoute {
+        ::nova_boot::inventory::submit! {
+            ::nova_boot::NovaRoute {
                 path: #path,
                 method: #method,
                 handler: || #route_expr,

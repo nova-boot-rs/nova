@@ -108,7 +108,7 @@ jobs:
             - name: Redis integration tests
               env:
                 NOVA_TEST_REDIS_URL: redis://127.0.0.1:6379/
-              run: cargo test -p nova-core --features redis-store -- --ignored redis
+              run: cargo test -p nova-boot --features redis-store -- --ignored redis
 
             - name: Kafka integration tests
               env:

@@ -1,5 +1,5 @@
 use crate::NovaGraphDb;
-use nova_core::{NovaPlugin, async_trait as nova_async_trait, axum::Extension, axum::Router};
+use nova_boot::{NovaPlugin, async_trait as nova_async_trait, axum::Extension, axum::Router};
 
 /// Plugin wiring for graph database support.
 ///

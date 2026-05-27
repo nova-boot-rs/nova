@@ -8,12 +8,12 @@ pub mod resilience;
 pub mod response;
 pub mod validation;
 
-use nova_core::Json;
-use nova_core::axum::body::Body;
-use nova_core::axum::http::Request;
-use nova_core::axum::http::StatusCode;
-use nova_core::axum::middleware::Next;
-use nova_core::axum::response::{IntoResponse, Response};
+use nova_boot::Json;
+use nova_boot::axum::body::Body;
+use nova_boot::axum::http::Request;
+use nova_boot::axum::http::StatusCode;
+use nova_boot::axum::middleware::Next;
+use nova_boot::axum::response::{IntoResponse, Response};
 use serde_json::json;
 use std::sync::Arc;
 

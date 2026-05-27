@@ -1,5 +1,5 @@
 (function() {
-    var implementors = Object.fromEntries([["nova_core",[]]]);
+    var implementors = Object.fromEntries([["nova_boot",[]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {

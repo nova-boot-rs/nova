@@ -1,5 +1,5 @@
 [package]
-name = "nova-core"
+name = "nova-boot"
 version.workspace = true
 edition.workspace = true
 description = "Core runtime types and utilities for Nova"
