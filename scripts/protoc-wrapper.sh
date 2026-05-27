@@ -67,7 +67,6 @@ protoc_exe_name="${platform_info##*:}"
 cache_dir="$cache_root/$version/$platform"
 protoc_bin="$cache_dir/bin/$protoc_exe_name"
 checksum_file="$cache_dir/.sha256"
-expected_checksum="$(expected_sha256)"
 
 expected_sha256() {
     case "$platform" in
@@ -83,6 +82,8 @@ expected_sha256() {
             ;;
     esac
 }
+
+expected_checksum="$(expected_sha256)"
 
 archive_sha256() {
     local archive_path="$1"

@@ -88,7 +88,6 @@ pub trait ResilienceStore: Send + Sync + 'static {
     ) -> Result<LuaValue, ResilienceError>;
 }
 
-/// Redis-backed implementation (optional, behind feature flag `redis-store`).
 #[cfg(feature = "redis-store")]
 pub mod redis_store {
     //! Small Redis adapter implementing `ResilienceStore`.
