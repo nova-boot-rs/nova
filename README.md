@@ -1,147 +1,170 @@
-# 🌟 Nova
+# Nova-boot
 
-Nova is a high-productivity microservice framework for Rust built on top of Axum.
+**A batteries-included microservice framework for Rust — built on Axum.**
 
-It is designed around convention over configuration, with a split crate layout for core HTTP behavior, macro-based route registration, and database integration through SeaORM.
+Build resilient, observable, and scalable services with first-class plugins for databases, messaging, discovery, and resilience primitives. Nova reduces integration work so you can focus on business logic.
 
-## Features
+<!-- [![Crates.io](https://img.shields.io/crates/v/nova-core)](https://crates.io/crates/nova-core) -->
+<!-- [![Docs](https://docs.rs/nova-core/badge.svg)](https://docs.rs/nova-core) -->
+[![CI](https://github.com/nova-boot/nova/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/nova/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+---
 
-- Attribute-based route handlers with `#[get]`, `#[post]`, `#[put]`, `#[patch]`, and `#[delete]`
-- Automatic route discovery through the inventory registry
-- Plugin-based application bootstrapping
-- Standardized JSON responses for success and errors
-- Shared `NovaError` and `NovaResult` types for handler ergonomics
-- SeaORM-powered SQL integration in the `nova-sql` crate
-- Built-in request logging through Tower HTTP tracing middleware
+---
+---
 
-## Project Structure
+## 🚀 Quick Start
 
-- `crates/nova-core` - HTTP app runtime, response types, and error handling
-- `crates/nova-macros` - route and controller attribute macros
-- `crates/nova-sql` - database plugin and entity syncing helpers
-- `example/demo` - runnable example showing controllers, entities, and database access
+Add the crates you need to `Cargo.toml` (choose plugins you need):
 
-## Quick Start
-
-### 1. Run the demo
-
-```bash
-cargo run --manifest-path example/demo/Cargo.toml
+```toml
+[dependencies]
+nova-core = "0.2"
+# add plugin crates as needed
+nova-sql = "0.2"          # optional: SQL support (SeaORM)
+nova-nosql = "0.2"        # optional: NoSQL adapters
+nova-messaging = "0.2"    # optional: Kafka/RabbitMQ/NATS
+nova-observability = "0.2" # optional: tracing, metrics, OpenAPI
 ```
 
-### 2. Call the endpoints
+Tip: prefer adding only the plugins you use to keep binary size small. Use workspace dependency overrides for local development.
 
-```bash
-curl http://localhost:8080/hello
-curl -X POST http://localhost:8080/echo -H "Content-Type: application/json" -d '{"content":"Hello Nova!"}'
-curl http://localhost:8080/users
-curl http://localhost:8080/db-status
-curl http://localhost:8080/health
+## Quick summary
+
+- Plugin-first architecture: bring your DB pools, brokers, and middleware as swappable plugins.
+- Batteries included: SQL, NoSQL, Graph, Messaging, Observability, Resilience, and discovery plugins.
+- Ergonomic APIs: routing macros, request extractors, and validation helpers.
+- Production-ready primitives: circuit breakers, retries, distributed rate limiting, and DLQ support.
+
+---
+
+## Why Nova?
+
+Nova is a batteries‑included application framework built on Axum that removes repetitive integration work so teams can ship production services faster. For the long-form rationale and a framework comparison, see [docs/WHY_NOVA.md](docs/WHY_NOVA.md).
+
+---
+
+## 🚀 Quick Start
+
+Add the crates you need to `Cargo.toml`:
+
+```toml
+[dependencies]
+nova-core = "0.2"
+nova-sql = "0.2"
+nova-observability = "0.2"
 ```
 
-### 3. Create your own handler
+Create a minimal service:
 
 ```rust
-use nova_core::{ApiResponse, Json, get};
+use nova_core::prelude::*;
+use nova_sql::NovaSql;
+use nova_observability::ObservabilityPlugin;
 
-#[get("/ping")]
-pub async fn ping() -> Json<ApiResponse<&'static str>> {
-	Json(ApiResponse::ok("pong"))
+#[get("/hello")]
+fn hello() -> &'static str { "Hello from Nova!" }
+
+#[tokio::main]
+async fn main() {
+    let db = NovaSql::connect("sqlite::memory:", false).await;
+    let state = AppState::new(db);
+
+    NovaApp::new("hello-service", 3000, state)
+        .add_plugin(ObservabilityPlugin::new("hello-service"))
+        .run()
+        .await;
 }
 ```
 
-## API Guide
-
-### Success responses
-
-Use `ApiResponse` for structured JSON output. When you need a specific HTTP status, use `ApiResponse::with_status`.
-
-```rust
-Ok(Json(ApiResponse::with_status(StatusCode::CREATED, payload)))
-```
-
-### Error responses
-
-Return `NovaResult<T>` and map failures to `NovaError` variants.
-
-```rust
-return Err(NovaError::NotFound("user not found".to_string()));
-```
-
-For custom HTTP codes, use `NovaError::Custom`.
-
-```rust
-return Err(NovaError::Custom {
-	status: StatusCode::UNPROCESSABLE_ENTITY,
-	error: "ValidationError".to_string(),
-	message: "Message cannot be empty".to_string(),
-});
-```
-
-## Example Controller
-
-The demo application in `example/demo` shows how to:
-
-- define request and response structs
-- register handlers with route macros
-- return structured JSON responses
-- surface database errors through `NovaError`
-
-See `example/demo/src/controller/controller.rs` for the full example.
-
-## Architecture
-
-Nova is intentionally small at the core:
-
-- `nova-core` owns the application runtime and response contracts
-- `nova-macros` turns annotated functions into registered routes
-- `nova-sql` provides optional persistence support as a plugin
-
-The request flow is:
-
-1. The app starts through `NovaApp`
-2. Plugins are initialized
-3. Route macros submit handlers into the inventory registry
-4. The app collects routes and builds the Axum router
-5. Handlers return `ApiResponse` or `NovaError`, which convert into JSON responses
-
-More detail is available in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md).
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Error Handling](docs/ERROR_HANDLING.md)
-
-## Prerequisites for Optional Plugins
-
-Some optional plugins (for example the `nova-discovery-etcd` crate) depend on native tooling to build their dependencies.
-
-- `protoc` (Protocol Buffers compiler): required by the `etcd-client` dependency when building the etcd discovery plugin. If `protoc` is not available you may see an error like "Could not find `protoc`" during `cargo build` or `cargo test`.
-
-Install `protoc` on Debian/Ubuntu with:
+Run:
 
 ```bash
-sudo apt-get update && sudo apt-get install -y protobuf-compiler
+cargo run --bin hello-service
+# visit http://localhost:3000/hello
 ```
 
-Or download a release from https://github.com/protocolbuffers/protobuf/releases and set the `PROTOC` environment variable to the `protoc` binary path if you prefer a custom location.
+---
 
-In GitHub Actions, the CI workflow installs `protoc` automatically before the build and test steps, so the repository does not need to keep a checked-in `PROTOC` override. If you want the local wrapper script, set it outside the repo, for example:
+## Key features
 
-```bash
-export PROTOC=/absolute/path/to/nova/scripts/protoc-wrapper.sh
-```
+- Plugin architecture: modular runtime with `NovaPlugin` for middleware and services.
+- Storage: `nova-sql`, `nova-nosql`, `nova-graphdb` (SeaORM, MongoDB, Neo4j, etc.).
+- Messaging: `nova-messaging` with Kafka / RabbitMQ / NATS + DLQ support.
+- Resilience: circuit breaker, retries, bulkheads, distributed rate limiting.
+- Observability: structured logging, tracing, Prometheus metrics, OpenAPI hooks.
+- Developer ergonomics: `#[get|post]`, `#[validate]`, and semantic request extractors.
+- Examples and in‑memory adapters for testing and local development.
 
-or put the same setting in your personal `~/.cargo/config.toml`.
+---
 
-If you don't need to build the etcd plugin locally, run tests excluding that crate:
+## Crates (high level)
 
-```bash
-cargo test -p nova-discovery-static -p nova-discovery-consul
-```
+See the `crates/` folder for all workspace members. Notable crates:
 
-## Notes
+- `nova-core` — runtime, plugin trait, app lifecycle
+- `nova-macros` — routing & validation macros
+- `nova-sql`, `nova-nosql`, `nova-graphdb`, `nova-messaging` — data & messaging plugins
+- `nova-observability` — tracing, metrics, OpenAPI
+- `nova-client` — discovery-aware HTTP client
+- `nova-test` — integration test harness (reprioritized)
 
-- The demo uses SQLite through SeaORM.
-- The response wrapper keeps HTTP status internal so the JSON stays stable while the transport status still changes.
-- The demo echo endpoint accepts `{ "content": "..." }` and also tolerates the older `message` field.
+---
+
+## Crate Overview
+
+| Crate | Purpose |
+|-------|---------|
+| `nova-core` | Runtime, plugin trait, app lifecycle, configuration |
+| `nova-macros` | Routing, validation, and service macros |
+| `nova-observability` | Tracing, metrics, OpenAPI |
+| `nova-middleware` | Rate limiting, circuit breaker, retry |
+| `nova-resilience-store` | Distributed state for resilience (Redis, in‑memory) |
+| `nova-sql` | SeaORM integration with read/write splitting and caching |
+| `nova-nosql` | Document & key‑value stores (MongoDB, Redis) |
+| `nova-graphdb` | Graph databases (Neo4j, SurrealDB) |
+| `nova-messaging` | Kafka, RabbitMQ, NATS with DLQ support |
+| `nova-data-patterns` | CQRS, Event Sourcing, Saga |
+| `nova-discovery` | Service discovery trait and backends (Consul, etcd, DNS, static) |
+| `nova-client` | Smart HTTP client with discovery‑aware load balancing |
+| `nova-gateway` | API Gateway (planned) |
+| `nova-auth` | Authentication & authorization (planned) |
+
+
+---
+
+## Docs & Roadmap
+
+- Full roadmap: [ROADMAP.md](ROADMAP.md)
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Examples: [example/](example/)
+
+If you want an in-depth rationale and framework comparison, see `docs/ARCHITECTURE.md`.
+
+---
+
+## Contributing
+
+Contributions welcome: code, docs, examples, or issues. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## License
+
+Licensed under either MIT or Apache-2.0 at your option. See `LICENSE` files.
+
+---
+
+Built with ❤️ for the Rust community. If Nova helps you, consider sponsoring the project.
+
+## License
+
+Licensed under either of
+
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+---
+
+Built with ❤️ for the Rust community. If Nova saves you time, consider [sponsoring the project](https://github.com/sponsors/nova-boot-rs).

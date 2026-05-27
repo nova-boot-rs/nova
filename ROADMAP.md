@@ -127,6 +127,12 @@ Let services find and talk to each other dynamically.
 - [PLANNED] DI container with singleton/scoped/transient lifetimes
 - [PLANNED] Integration with Axum's `FromRequestParts` for seamless extraction
 
+### Testing (PRIORITIZED)
+- [PRIORITIZED] Move `nova-test` earlier in the roadmap (see Phase 5 recommendations)
+- [PLANNED] `nova-test` harness: `#[nova::test]` that spins up a `NovaApp` with in‑memory plugins
+- [PLANNED] Request builders and fixtures for integration tests
+- [PLANNED] Snapshot testing helpers and request recording/replay
+
 ---
 
 ## **Phase 6: API Gateway** 🔵 PLANNED
@@ -182,6 +188,9 @@ AuthN and AuthZ integrated across the framework. Pluggable — no forced user mo
 - [PLANNED] CSRF protection (NEW)
 - [PLANNED] Custom auth provider trait
 
+### Priority Note
+- **Priority:** draft an Auth RFC and prioritize core AuthN middleware and API (JWT/OAuth2/API keys) immediately after Phase 5 work completes. Macros (e.g. `#[require_role]`) can follow once middleware primitives are solid.
+
 ### Authorization
 - [PLANNED] Role-Based Access Control (RBAC) macros
 - [PLANNED] Attribute-Based Access Control (ABAC)
@@ -218,12 +227,17 @@ Tools that make building with Nova fast and enjoyable.
 - [PLANNED] `nova docker build` — optimized container builds
 - [PLANNED] `nova deploy` — push to cloud platforms
 
-### Testing (PLANNED)
-- [PLANNED] `nova-test` crate with service mocking
-- [PLANNED] Integration test harness
-- [PLANNED] Fixture management
-- [PLANNED] Chaos testing helpers
-- [PLANNED] Request recording and replay
+### Background Jobs / Task Queue (nova-tasks) (NEW)
+- [PLANNED] `nova-tasks` crate: lightweight, framework-integrated task queue
+- [PLANNED] In-memory queue implementation for development and tests
+- [PLANNED] Redis-backed queue adapter for production (atomic push/pop, visibility timeout)
+- [PLANNED] `#[background_job]` macro (proc-macro) for easy job definition
+- [PLANNED] Retries, exponential backoff, and DLQ support
+- [PLANNED] Scheduled/delayed jobs API (cron-like and TTL-based delays)
+- [PLANNED] Metrics (tasks processed, failures, retries) + tracing spans
+- [PLANNED] Integration examples: `example/event-worker` + `example/demo` usage
+- [PLANNED] Comprehensive tests and `nova-test` integration
+- [PLANNED] Docs and a short tutorial on job patterns
 
 ### Documentation (NEW — prioritized)
 - [PLANNED] "Getting Started" tutorial (based on `example/demo/`)
@@ -350,6 +364,7 @@ crates/
 ├── nova-client/                # Phase 5
 ├── nova-gateway/               # Phase 6
 ├── nova-auth/                  # Phase 7
+├── nova-test/                  # Phase 5 (reprioritized)
 ├── nova-cli/                   # Phase 8
-└── nova-test/                  # Phase 8
+└── nova-tasks/                 # Phase 8 (new: lightweight in-process task queue)
 ```

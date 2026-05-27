@@ -94,6 +94,14 @@ where
         // Step 3: Collect and deduplicate inventory routes
         let mut route_map: RouteRegistry = HashMap::new();
         for route in inventory::iter::<NovaRoute> {
+            if route.path == "/health" {
+                tracing::warn!(
+                    "Route {} {} conflicts with built-in health check and will be overridden",
+                    route.method,
+                    route.path
+                );
+                continue;
+            }
             let key = (route.method, route.path);
             if route_map.insert(key, route.handler).is_some() {
                 tracing::warn!(
