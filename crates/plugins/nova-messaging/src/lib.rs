@@ -1,5 +1,9 @@
 //! Nova messaging abstractions and broker implementations.
 
+// Embed example source in crate docs so users can view runnable examples
+// directly in rustdoc.
+#![doc = concat!("\n\n# Example: simple\n\n```rust\n", include_str!("../examples/simple.rs"), "\n```\n")]
+
 pub mod envelope;
 pub mod error;
 pub mod kafka;

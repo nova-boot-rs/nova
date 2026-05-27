@@ -1,3 +1,13 @@
+//! Observability utilities and request-scoped helpers.
+//!
+//! This crate provides tracing initialization, request ID generation, a small
+//! request context type injected into request extensions, and an OpenAPI hook
+//! registry used by plugins to contribute OpenAPI fragments.
+//!
+//! The key pieces are:
+//! - `init_tracing` — initialize `tracing` subscriber once per process
+//! - `attach_request_context` middleware — inserts a `RequestContext` into extensions
+//! - `OpenApiHook` + `build_openapi_document` — an `inventory`-backed OpenAPI composer
 use axum::extract::Request;
 use axum::http::header::{HeaderName, HeaderValue};
 use axum::middleware::Next;

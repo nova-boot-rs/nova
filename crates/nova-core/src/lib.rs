@@ -31,6 +31,8 @@ pub use traits::{
 };
 
 pub use state::NovaState;
+// Public documentation: core types are documented in their respective modules
+// (see `crates/nova-core/src/runtime.rs`, `state.rs`, and `error.rs`).
 
 // Observability plugin lives in `crates/nova-observability` to avoid cycles.
 

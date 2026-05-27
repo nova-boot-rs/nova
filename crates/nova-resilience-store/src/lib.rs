@@ -1,11 +1,21 @@
+//! Resilience store abstraction and optional Redis-backed implementation.
+//!
+//! The `ResilienceStore` trait exposes a minimal set of operations used by
+//! the framework to implement distributed circuit breakers and rate limiters.
+//!
+//! The optional `redis-store` feature provides `RedisStore`, a small
+//! adapter that converts Redis return values to `LuaValue` variants.
+
 use std::fmt;
 
+/// Error type returned by resilience store implementations.
 #[derive(Debug, Clone)]
 pub struct ResilienceError {
     message: String,
 }
 
 impl ResilienceError {
+    /// Create a new `ResilienceError` with a message.
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
@@ -22,6 +32,10 @@ impl fmt::Display for ResilienceError {
 impl std::error::Error for ResilienceError {}
 
 /// Lua script return values supported by resilience stores.
+///
+/// This enum models the limited set of return types we expect from
+/// `EVAL` / script invocations used by rate limiter and circuit breaker
+/// helpers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LuaValue {
     Nil,
@@ -33,6 +47,7 @@ pub enum LuaValue {
 }
 
 impl LuaValue {
+    /// Return an `i64` if the value is an integer.
     pub fn as_i64(&self) -> Option<i64> {
         match self {
             Self::Integer(value) => Some(*value),
@@ -40,6 +55,7 @@ impl LuaValue {
         }
     }
 
+    /// Return bytes slice when the variant holds raw bytes.
     pub fn as_bytes(&self) -> Option<&[u8]> {
         match self {
             Self::Bytes(value) => Some(value.as_slice()),
@@ -47,6 +63,7 @@ impl LuaValue {
         }
     }
 
+    /// Return text representation when the value holds UTF-8 bytes.
     pub fn as_str(&self) -> Option<&str> {
         self.as_bytes()
             .and_then(|value| std::str::from_utf8(value).ok())
@@ -54,6 +71,9 @@ impl LuaValue {
 }
 
 /// Minimal distributed key-value operations used by resilience backends.
+///
+/// Implement this trait to allow the framework to store counters, flags
+/// and execute Lua scripts atomically in a backing store (e.g., Redis).
 #[async_trait::async_trait]
 pub trait ResilienceStore: Send + Sync + 'static {
     async fn incr(&self, key: &str) -> Result<i64, ResilienceError>;
@@ -71,16 +91,23 @@ pub trait ResilienceStore: Send + Sync + 'static {
 /// Redis-backed implementation (optional, behind feature flag `redis-store`).
 #[cfg(feature = "redis-store")]
 pub mod redis_store {
+    //! Small Redis adapter implementing `ResilienceStore`.
+    //!
+    //! This adapter converts Redis library return types into `LuaValue`
+    //! variants and provides async implementations of the trait methods.
+
     use super::{LuaValue, ResilienceError, ResilienceStore};
     use redis::AsyncCommands;
     use redis::Client;
 
+    /// Redis-backed resilience store.
     #[derive(Clone)]
     pub struct RedisStore {
         client: Client,
     }
 
     impl RedisStore {
+        /// Create a new `RedisStore` from a Redis connection URL.
         pub fn new(url: &str) -> Result<Self, ResilienceError> {
             let client = Client::open(url).map_err(|e| ResilienceError::new(e.to_string()))?;
             Ok(Self { client })

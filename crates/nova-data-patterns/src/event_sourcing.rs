@@ -1,3 +1,8 @@
+//! Event sourcing helpers and in-memory event store.
+//!
+//! Exposes the `Aggregate` trait, `EventStore` trait, and a generic
+//! `EventSourcedRepository` that can rebuild aggregates from event streams and
+//! persist new domain events. Includes an `InMemoryEventStore` for tests.
 use async_trait::async_trait;
 use serde::{Serialize, de::DeserializeOwned};
 use std::collections::HashMap;

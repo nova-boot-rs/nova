@@ -1,4 +1,14 @@
-//! Nova graph database abstractions and store implementations.
+//! Graph database abstractions and store implementations for Nova.
+//!
+//! This crate provides a small adapter layer over different graph database
+//! backends (Neo4j, Surreal, in-memory). It exposes a `NovaGraphDb` wrapper
+//! that application handlers can extract to execute queries, upsert nodes and
+//! edges, and traverse subgraphs. The crate also supplies lightweight
+//! builders and types used across adapters.
+
+// Embed example source in crate docs so users can view runnable examples
+// directly in rustdoc.
+#![doc = concat!("\n\n# Example: simple\n\n```rust\n", include_str!("../examples/simple.rs"), "\n```\n")]
 
 pub mod builders;
 pub mod error;

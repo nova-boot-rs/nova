@@ -7,6 +7,11 @@ use std::sync::{
 use tokio::sync::RwLock;
 
 /// Simple read/write pool with round-robin replica selection for reads.
+///
+/// This pool exposes `read()` for selecting a replica (or primary when no
+/// replicas exist) and `write()` for obtaining the primary connection for
+/// write operations. It is intentionally small and clones `DatabaseConnection`
+/// references for simplicity.
 #[derive(Clone)]
 pub struct ReadWritePool {
     primary: DatabaseConnection,

@@ -1,9 +1,13 @@
 use std::fmt;
 
+/// Error type for NoSQL adapters and operations.
 #[derive(Debug)]
 pub enum NoSqlError {
+    /// Backend-specific error with a human-readable message.
     Backend(String),
+    /// Serialization/deserialization error.
     Serialization(String),
+    /// Placeholder for features not yet implemented.
     NotImplemented(&'static str),
 }
 

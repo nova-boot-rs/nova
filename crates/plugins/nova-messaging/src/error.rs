@@ -1,10 +1,15 @@
 use std::fmt;
 
+/// Errors returned by messaging adapters and helpers.
 #[derive(Debug)]
 pub enum MessagingError {
+    /// Backend-level error.
     Backend(String),
+    /// Serialization/deserialization error.
     Serialization(String),
+    /// User-provided handler error.
     Handler(String),
+    /// Placeholder for not-yet-implemented features.
     NotImplemented(&'static str),
 }
 

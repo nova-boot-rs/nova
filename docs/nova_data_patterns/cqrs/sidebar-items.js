@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["InMemoryCqrsStore","StoredEvent"],"trait":["Command","CommandStore","Query","QueryStore","QueryStoreExt"]};

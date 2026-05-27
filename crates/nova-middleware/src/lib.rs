@@ -1,3 +1,9 @@
+//! Middleware utilities used by Nova applications.
+//!
+//! This crate contains common middleware patterns (circuit breaker, rate
+//! limiting, bulkhead) and response/validation helpers used across the
+//! framework and example apps.
+
 pub mod resilience;
 pub mod response;
 pub mod validation;
@@ -25,6 +31,10 @@ pub use validation::{
 };
 
 /// Rejects requests when the in-memory circuit is open.
+///
+/// Intended for use as an Axum `Service` middleware layer. When the
+/// provided `CircuitBreaker` reports the circuit is open this middleware
+/// returns `503 Service Unavailable`.
 pub async fn circuit_breaker_middleware(
     state: Arc<CircuitBreaker>,
     req: Request<Body>,
@@ -49,6 +59,10 @@ pub async fn circuit_breaker_middleware(
 }
 
 /// Rejects requests when a circuit backend reports open.
+///
+/// Variant that accepts a boxed `CircuitBreakerBackend` trait object for
+/// distributed backends (Redis, etc.). Returns `500` when the backend
+/// itself errors.
 pub async fn circuit_breaker_middleware_boxed(
     state: Arc<dyn CircuitBreakerBackend>,
     req: Request<Body>,
@@ -83,6 +97,9 @@ pub async fn circuit_breaker_middleware_boxed(
 }
 
 /// Token-bucket style in-memory rate limiter by `x-client-id`.
+///
+/// Looks for `x-client-id` header and enforces token-bucket limits per
+/// client. Returns `429 Too Many Requests` when the limit is exceeded.
 pub async fn rate_limiter_middleware(
     state: Arc<RateLimiter>,
     req: Request<Body>,
@@ -104,6 +121,10 @@ pub async fn rate_limiter_middleware(
 }
 
 /// Rate limiter backed by a `RateLimiterBackend` implementation.
+///
+/// Variant accepting a boxed `RateLimiterBackend` for distributed
+/// implementations. Converts backend errors into `500 Internal Server
+/// Error` responses.
 pub async fn rate_limiter_middleware_boxed(
     state: Arc<dyn RateLimiterBackend>,
     req: Request<Body>,
@@ -132,6 +153,8 @@ pub async fn rate_limiter_middleware_boxed(
 }
 
 /// Semaphore-based concurrency limiter.
+///
+/// Runs the inner handler while holding a permit from a `Bulkhead`.
 pub async fn bulkhead_middleware(state: Arc<Bulkhead>, req: Request<Body>, next: Next) -> Response {
     state
         .with_permit(|| async move { next.run(req).await })

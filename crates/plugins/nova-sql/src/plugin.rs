@@ -2,6 +2,12 @@ use crate::{connection::NovaSql, pool::ReadWritePool, tenant_middleware::tenant_
 use nova_core::{NovaPlugin, async_trait, axum::Extension, axum::Router, axum::middleware};
 use std::sync::Arc;
 
+/// Plugin integration for Nova applications.
+///
+/// Implements `NovaPlugin` for `NovaSql` so the plugin can be added to the
+/// application via `NovaApp::add_plugin(...)`. During `extend_router` the
+/// plugin injects a `ReadWritePool` into request extensions so handlers can
+/// extract `NovaDb`.
 #[async_trait]
 impl NovaPlugin for NovaSql {
     fn name(&self) -> &'static str {

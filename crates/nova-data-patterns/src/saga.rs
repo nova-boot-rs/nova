@@ -1,3 +1,7 @@
+//! Saga orchestration primitives and a coordinator implementation.
+//!
+//! Defines `Saga` and `SagaStep` traits, execution tracking types, and a
+//! `SagaCoordinator` which can run composed sagas with retry/compensation logic.
 use async_trait::async_trait;
 use std::sync::Arc;
 

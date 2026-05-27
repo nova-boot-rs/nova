@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["check_db","create_user","demo_openapi_fragment","echo","get_users","get_users_paged","hello_world","runtime_config","versioned_hello"],"struct":["CreateUser","MessageReceived","MessageSent","UserResponse"]};

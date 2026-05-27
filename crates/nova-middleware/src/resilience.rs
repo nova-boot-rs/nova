@@ -1,3 +1,9 @@
+//! Resilience primitives: circuit breakers, rate limiters and retry policies.
+//!
+//! This module provides both in-memory and distributed implementations
+//! of common resilience patterns used by services to remain available
+//! under failure conditions.
+
 use async_trait::async_trait;
 use nova_core::{
     NovaError,
@@ -12,6 +18,9 @@ use tokio::sync::{Mutex, Semaphore};
 type TokenBucketState = (f64, Instant, f64);
 
 /// Simple in-memory circuit breaker with manual record API.
+///
+/// Use `CircuitBreaker::allow()` to check whether calls are permitted and
+/// `record_failure()` / `record_success()` to update internal counters.
 #[derive(Debug)]
 pub struct CircuitBreaker {
     failures: Arc<Mutex<u32>>,
@@ -21,6 +30,9 @@ pub struct CircuitBreaker {
 }
 
 /// Circuit breaker that stores state in a distributed store (Redis, etc.)
+///
+/// This implementation delegates state storage to a `ResilienceStore`
+/// (Lua/Redis) and is suitable for multi-instance deployments.
 #[derive(Clone)]
 pub struct DistributedCircuitBreaker {
     store: Arc<dyn ResilienceStore>,
@@ -209,6 +221,9 @@ impl RateLimiterBackend for DistributedRateLimiter {
 }
 
 /// Build a `CircuitBreakerBackend` from `CircuitBreakerConfig` and an optional distributed store.
+///
+/// Helper used by application startup code to create either a local or
+/// distributed backend depending on configuration.
 pub fn build_circuit_breaker_backend(
     name: &str,
     cfg: &CircuitBreakerConfig,
@@ -239,6 +254,9 @@ pub fn build_circuit_breaker_backend(
 }
 
 /// Build a `RateLimiterBackend` from `RateLimiterConfig` and an optional distributed store.
+///
+/// Creates either a local in-memory rate limiter or a distributed backed
+/// by `ResilienceStore` depending on configuration.
 pub fn build_rate_limiter_backend(
     prefix: &str,
     cfg: &RateLimiterConfig,

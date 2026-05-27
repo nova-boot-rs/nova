@@ -37,6 +37,11 @@ async fn shutdown_signal() {
     }
 }
 
+/// The main application container.
+///
+/// `NovaApp` holds framework-level configuration, the application state, and
+/// registered plugins. Construct with `NovaApp::new(name, port, state)` and
+/// call `.add_plugin(...)` to register plugins before `run()`.
 pub struct NovaApp<S = ()>
 where
     S: Clone + Send + Sync + 'static,
@@ -49,6 +54,11 @@ where
     plugins: Vec<Box<dyn NovaPlugin>>,
 }
 
+/// A route contributed via the `inventory` macro by attribute macros.
+///
+/// Each route is a static descriptor with a path, method and a handler
+/// constructor function used at startup to register the route into the
+/// application router.
 pub struct NovaRoute {
     pub path: &'static str,
     pub method: &'static str,

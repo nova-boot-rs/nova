@@ -1,9 +1,13 @@
 use std::fmt;
 
+/// Errors returned by CQRS stores and operations.
 #[derive(Debug, Clone)]
 pub enum CqrsError {
+    /// Backend-specific error.
     Backend(String),
+    /// Serialization/deserialization error.
     Serialization(String),
+    /// Optimistic concurrency violation.
     Concurrency(String),
 }
 
@@ -25,11 +29,16 @@ impl From<serde_json::Error> for CqrsError {
     }
 }
 
+/// Errors used by the Saga orchestration helpers.
 #[derive(Debug, Clone)]
 pub enum SagaError {
+    /// A saga step failed with a specific reason.
     StepFailed { step: String, reason: String },
+    /// Compensation for a step failed.
     CompensationFailed { step: String, reason: String },
+    /// Step timed out.
     Timeout { step: String },
+    /// Generic abort with message.
     Aborted(String),
 }
 

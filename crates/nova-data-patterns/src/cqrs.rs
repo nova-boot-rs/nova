@@ -1,3 +1,9 @@
+//! CQRS primitives: commands, queries, stored events, and in-memory stores.
+//!
+//! This module provides interfaces and simple in-memory implementations for
+//! CommandStore and QueryStore, a `StoredEvent` representation, and helpers
+//! such as `QueryStoreExt` and `InMemoryCqrsStore` useful for tests and
+//! examples.
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;

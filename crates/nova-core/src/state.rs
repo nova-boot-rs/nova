@@ -6,6 +6,20 @@ use axum::{
 };
 use std::fmt;
 
+/// Wrapper extractor for application state.
+///
+/// Use this extractor in handlers to obtain a cloned instance of the
+/// application state type previously injected into the Axum router via
+/// `axum::Extension(state)` (NovaApp injects the state for you).
+///
+/// Example:
+///
+/// ```ignore
+/// async fn handler(state: NovaState<MyState>) -> impl IntoResponse {
+///     let s: MyState = state.0; // cloned state
+///     // ...
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct NovaState<S>(pub S);
 
@@ -31,7 +45,11 @@ where
     }
 }
 
-/// Error returned when application state is missing.
+/// Error returned when application state is missing from request extensions.
+///
+/// This occurs when the application failed to add `Extension<...>` for the
+/// configured state type. The rejection implements `IntoResponse` and will
+/// produce a 500-level response when returned from an extractor.
 #[derive(Debug)]
 pub struct NovaStateRejection;
 

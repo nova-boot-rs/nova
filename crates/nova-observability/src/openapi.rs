@@ -1,6 +1,16 @@
+//! Small utility for composing OpenAPI fragments contributed by multiple crates.
+//!
+//! Crates can register an `OpenApiHook` via the `inventory` crate. The
+//! `build_openapi_document` function iterates the collected hooks and merges
+//! their JSON fragments into a single OpenAPI document.
 use inventory;
 use serde_json::{Map, Value, json};
 
+/// A single OpenAPI fragment provider.
+///
+/// `name` is a human-friendly identifier used for debugging; `provider` must
+/// return a JSON `Value` containing a valid OpenAPI fragment (typically a
+/// partial document with `paths` and/or `components`).
 pub struct OpenApiHook {
     pub name: &'static str,
     pub provider: fn() -> Value,
@@ -8,6 +18,8 @@ pub struct OpenApiHook {
 
 inventory::collect!(OpenApiHook);
 
+/// Merge `overlay` into `base` recursively. Objects are merged by key,
+/// other JSON values replace the base value.
 fn merge_json(base: &mut Value, overlay: Value) {
     match (base, overlay) {
         (Value::Object(base_map), Value::Object(overlay_map)) => {

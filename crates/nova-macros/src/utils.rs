@@ -1,7 +1,16 @@
+//! Utility helpers and derive implementations used by the public macros.
+//!
+//! These helpers implement small code-generation rules such as deriving the
+//! `NovaRequest`/`NovaResponse` marker traits and adding controller
+//! metadata helpers.
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ItemStruct, parse_macro_input};
 
+/// Implements a small metadata helper on controller structs. The macro
+/// preserves the original struct and adds a `nova_metadata()` method used
+/// by examples and tests.
 pub fn rest_controller(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
     let name = &input.ident;
@@ -10,6 +19,7 @@ pub fn rest_controller(input: TokenStream) -> TokenStream {
         #input
 
         impl #name {
+            /// Returns a short marker string describing the controller.
             pub fn nova_metadata() -> &'static str {
                 "Registered as Nova Controller"
             }
@@ -19,6 +29,8 @@ pub fn rest_controller(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Derive implementation that marks the struct as a request model by
+/// implementing the `NovaRequestModel` marker trait.
 pub fn request_model(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
     let name = &input.ident;
@@ -30,6 +42,8 @@ pub fn request_model(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Derive implementation that marks the struct as a response model by
+/// implementing the `NovaResponseModel` marker trait.
 pub fn response_model(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
     let name = &input.ident;

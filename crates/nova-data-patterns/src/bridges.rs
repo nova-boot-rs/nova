@@ -1,3 +1,9 @@
+//! Optional bridge adapters connecting CQRS/Saga patterns to storage and
+//! messaging systems (sql bridge, nosql projections, messaging saga bus).
+//!
+//! These adapters are feature-gated; they are compiled only when the
+//! corresponding feature (e.g., `sql-bridge`, `nosql-bridge`, `messaging-bridge`)
+//! is enabled.
 use async_trait::async_trait;
 use serde_json::Value as JsonValue;
 use std::sync::atomic::{AtomicBool, Ordering};

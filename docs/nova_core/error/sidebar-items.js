@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DiscoveryError","NovaError"],"struct":["ErrorResponse"],"type":["NovaResult"]};

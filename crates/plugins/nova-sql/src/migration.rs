@@ -6,6 +6,7 @@ use std::time::Duration;
 
 #[async_trait]
 pub(crate) trait SyncTask: Send + Sync {
+    /// Execute the synchronization task against the provided `NovaSql` instance.
     async fn run(&self, sql: &NovaSql);
 }
 
@@ -21,6 +22,7 @@ impl<E: EntityTrait + 'static> SyncTask for EntitySyncTask<E> {
 }
 
 impl NovaSql {
+    /// Register an entity type for automatic schema synchronization.
     pub fn add_entity<E: EntityTrait + 'static>(mut self) -> Self {
         self.sync_tasks.push(Box::new(EntitySyncTask::<E> {
             _marker: std::marker::PhantomData,
@@ -28,6 +30,10 @@ impl NovaSql {
         self
     }
 
+    /// Synchronize a single entity's columns with the database schema.
+    ///
+    /// If `allow_drop` is enabled, columns present in the database but
+    /// missing from the model may be dropped (use with caution).
     pub async fn sync_entity<E>(&self)
     where
         E: EntityTrait,
@@ -136,6 +142,8 @@ impl NovaSql {
     }
 
     /// Run migrations with simple retry logic.
+    ///
+    /// `attempts` must be >= 1 otherwise an explicit `DbErr::Custom` is returned.
     pub async fn run_migrations_with_retry<M>(
         &self,
         attempts: usize,

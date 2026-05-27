@@ -1,3 +1,7 @@
+//! Standardized API response helpers and versioning helpers.
+//!
+//! Provides JSON response wrapper types commonly used by Nova handlers.
+
 use axum::{
     Json,
     http::StatusCode,

@@ -1,3 +1,7 @@
+//! Observability plugin wiring for Nova applications.
+//!
+//! Adds an `/openapi.json` endpoint, initializes tracing on startup, and
+//! installs request-context middleware and HTTP tracing layers.
 use axum::Json;
 use axum::middleware;
 use axum::routing::get;
@@ -6,11 +10,13 @@ use tower_http::trace::TraceLayer;
 
 use crate::{attach_request_context, build_openapi_document, init_tracing, request_id_layer};
 
+/// Small plugin that wires the observability stack into the application.
 pub struct ObservabilityPlugin {
     pub service_name: &'static str,
 }
 
 impl ObservabilityPlugin {
+    /// Create a new `ObservabilityPlugin` for `service_name`.
     pub fn new(service_name: &'static str) -> Self {
         Self { service_name }
     }

@@ -8,15 +8,24 @@ use std::backtrace::Backtrace;
 use std::env;
 use std::fmt;
 
-/// Standardized error response for Nova API
+/// Standardized JSON error response used by the framework.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorResponse {
+    /// Short error type name (e.g., "NotFound", "DatabaseError").
     pub error: String,
+
+    /// Human-readable message suitable for API clients.
     pub message: String,
+
+    /// Optional details included only when `NOVA_DEBUG=true` to aid debugging.
     pub details: Option<String>,
 }
 
-/// Nova framework error types
+/// Nova framework error types.
+///
+/// Use `NovaError` for returning typed, HTTP-aware errors from handlers
+/// and library code. It implements `IntoResponse` so it can be returned
+/// directly from Axum handlers.
 #[derive(Debug)]
 pub enum NovaError {
     /// Database connection or query errors
