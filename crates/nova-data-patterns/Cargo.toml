@@ -2,6 +2,16 @@
 name = "nova-data-patterns"
 edition.workspace = true
 version.workspace = true
+description = "CQRS, event sourcing and saga patterns for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 nova-core = { path = "../nova-core" }
