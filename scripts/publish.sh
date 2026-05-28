@@ -12,7 +12,15 @@ CRATES=(
     "nova-boot-graphdb"
     "nova-boot-messaging"
     "nova-boot-data-patterns"
-    
+    "nova-boot-discovery-consul"
+    "nova-boot-discovery-etcd"
+    "nova-boot-discovery-dns"
+    "nova-boot-client"
+    "nova-boot-test"
+    "nova-boot-gateway"
+    "nova-boot-auth"
+    "nova-boot-cli"
+    "nova-boot-tasks"
 )
 
 set -a

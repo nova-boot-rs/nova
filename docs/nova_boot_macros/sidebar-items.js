@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["delete","get","patch","post","put","rest_controller"],"derive":["NovaRequest","NovaResponse"]};

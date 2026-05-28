@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["create_task","task_response","user"]};

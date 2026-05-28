@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["bridges","cqrs","error","event_sourcing","saga"]};
