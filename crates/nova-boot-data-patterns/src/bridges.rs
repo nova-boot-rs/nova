@@ -122,7 +122,7 @@ impl SqlCqrsBridge {
         .map_err(|e| CqrsError::Backend(e.to_string()))?;
 
         self.initialized.store(true, Ordering::Release);
-        info!("SqlCqrsBridge: tables initialized");
+        println!("SqlCqrsBridge: tables initialized");
         Ok(())
     }
 
@@ -171,7 +171,7 @@ impl CommandStore for SqlCqrsBridge {
         .await
         .map_err(|e| CqrsError::Backend(e.to_string()))?;
 
-        info!(
+        println!(
             aggregate_id = %agg_id,
             event_type = %evt_type,
             version = %ver,
@@ -300,7 +300,7 @@ impl QueryStore for SqlCqrsBridge {
         .await
         .map_err(|e| CqrsError::Backend(e.to_string()))?;
 
-        info!(key = %key, "SqlCqrsBridge: projection upserted");
+        println!(key = %key, "SqlCqrsBridge: projection upserted");
         Ok(())
     }
 }
@@ -345,7 +345,7 @@ impl QueryStore for NoSqlQueryStore {
             .upsert(&self.collection, key, &value)
             .await
             .map_err(|e| CqrsError::Backend(e.to_string()))?;
-        info!(key = %key, collection = %self.collection, "NoSqlQueryStore: projection upserted");
+        println!(key = %key, collection = %self.collection, "NoSqlQueryStore: projection upserted");
         Ok(())
     }
 }

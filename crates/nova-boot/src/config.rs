@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::RwLock;
-use tracing::{error, info};
+use tracing::error;
 
 use crate::NovaError;
 use crate::NovaResult;
@@ -116,7 +116,7 @@ where
                     let mut lock = holder_task.inner.write().await;
                     *lock = new_config;
                     last_modified = current_modified;
-                    info!("hot-reloaded config from {}", watched_path.display());
+                    println!("hot-reloaded config from {}", watched_path.display());
                 }
                 Err(err) => {
                     error!(

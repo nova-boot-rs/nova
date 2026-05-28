@@ -7,7 +7,6 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
-use tracing::info;
 
 async fn framework_health() -> Json<serde_json::Value> {
     Json(json!({"status": "healthy", "service": "nova"}))
@@ -94,7 +93,7 @@ where
     async fn build_router(&self) -> Router<()> {
         // Step 1: Initialize all plugins
         for plugin in &self.plugins {
-            info!("🔌 Loading plugin: {}", plugin.name());
+            println!("🔌 Loading plugin: {}", plugin.name());
             plugin.on_init().await;
         }
 
@@ -124,7 +123,7 @@ where
 
         // Step 4: Register inventory routes
         for ((method, path), handler) in route_map.into_iter() {
-            info!("📡 Registering {} route: {}", method, path);
+            println!("📡 Registering {} route: {}", method, path);
             let method_router: MethodRouter<()> = (handler)();
             base = base.route(path, method_router);
         }
@@ -135,7 +134,7 @@ where
 
         // Step 6: Let plugins extend the router
         for plugin in &self.plugins {
-            info!("🔌 Injecting state for: {}", plugin.name());
+            println!("🔌 Injecting state for: {}", plugin.name());
             base = plugin.extend_router(base);
         }
 
@@ -144,9 +143,9 @@ where
 
     /// Run plugin shutdown hooks in reverse order.
     async fn shutdown(&self) {
-        info!("🛑 {} shutting down", self.name);
+        println!("🛑 {} shutting down", self.name);
         for plugin in self.plugins.iter().rev() {
-            info!("🔌 Stopping plugin: {}", plugin.name());
+            println!("🔌 Stopping plugin: {}", plugin.name());
             plugin.on_shutdown().await;
         }
     }
@@ -155,7 +154,7 @@ where
     pub async fn run(self) {
         let final_router: Router<()> = self.build_router().await;
 
-        info!("🚀 {} starting on port {}", self.name, self.port);
+        println!("🚀 {} starting on port {}", self.name, self.port);
         let listener = TcpListener::bind(&self.address)
             .await
             .expect("Failed to bind server socket");
@@ -182,7 +181,7 @@ where
             .await
             .expect("invalid TLS certificate or key");
 
-        info!("🔒 {} starting on port {} with TLS", self.name, self.port);
+        println!("🔒 {} starting on port {} with TLS", self.name, self.port);
 
         tokio::spawn(async move {
             shutdown_signal().await;

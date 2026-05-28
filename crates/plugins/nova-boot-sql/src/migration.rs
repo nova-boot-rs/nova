@@ -2,6 +2,7 @@ use crate::connection::NovaSql;
 use async_trait::async_trait;
 use sea_orm::{ConnectionTrait, DbBackend, DbErr, EntityTrait, Schema, Statement};
 use sea_orm_migration::prelude::MigratorTrait;
+use sea_query::{MysqlQueryBuilder, PostgresQueryBuilder, SqliteQueryBuilder};
 use std::time::Duration;
 
 #[async_trait]
@@ -46,7 +47,34 @@ impl NovaSql {
         let existing_columns = self.get_table_columns(&table_name).await;
 
         if existing_columns.is_empty() {
-            // ... (Keep your existing Create Table logic)
+            // No table exists yet — create it from the entity model.
+            let table_create_stmt = schema.create_table_from_entity(entity);
+
+            // Convert the sea-query create statement to a SQL string based on backend
+            let create_sql = match self.db.get_database_backend() {
+                DbBackend::Sqlite => table_create_stmt.to_string(SqliteQueryBuilder),
+                DbBackend::Postgres => table_create_stmt.to_string(PostgresQueryBuilder),
+                _ => table_create_stmt.to_string(MysqlQueryBuilder),
+            };
+
+            // Log what we are creating so operators can inspect startup actions.
+            println!(
+                "🔧 Creating table '{}' with SQL:\n{}",
+                &table_name, create_sql
+            );
+
+            // Execute the create statement (best-effort)
+            match self
+                .db
+                .execute(Statement::from_string(
+                    self.db.get_database_backend(),
+                    create_sql,
+                ))
+                .await
+            {
+                Ok(_) => println!("✅ Created table '{}'", &table_name),
+                Err(e) => println!("⚠️ Failed to create table '{}': {}", &table_name, e),
+            }
         } else {
             let table_create_stmt = schema.create_table_from_entity(entity);
             let model_columns: Vec<String> = table_create_stmt
@@ -65,7 +93,13 @@ impl NovaSql {
                             .add_column(column.clone())
                             .to_owned(),
                     );
-                    self.db.execute(alter_stmt).await.ok();
+                    println!(
+                        "🔧 Adding column '{}' to '{}': {}",
+                        col_name, &table_name, alter_stmt
+                    );
+                    if let Err(e) = self.db.execute(alter_stmt).await {
+                        println!("⚠️ Could not add column {}: {}", col_name, e);
+                    }
                 }
             }
 
@@ -86,6 +120,8 @@ impl NovaSql {
 
                         if let Err(e) = self.db.execute(drop_stmt).await {
                             println!("⚠️ Could not drop column {}: {}", db_col, e);
+                        } else {
+                            println!("✅ Dropped column '{}' from '{}'", db_col, table_name);
                         }
                     }
                 }
@@ -203,5 +239,50 @@ mod tests {
             }
             other => panic!("unexpected error: {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn sync_entity_creates_table_sqlite_memory() {
+        use sea_orm::{ConnectionTrait, DbBackend, Statement};
+
+        // Create an in-memory NovaSql instance
+        let sql = NovaSql::connect("sqlite::memory:", false).await;
+
+        // Define a small test entity inside the test
+        mod test_entity {
+            use sea_orm::entity::prelude::*;
+
+            #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+            #[sea_orm(table_name = "__test_table")]
+            pub struct Model {
+                #[sea_orm(primary_key)]
+                pub id: i64,
+                pub name: String,
+            }
+
+            #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+            pub enum Relation {}
+
+            impl ActiveModelBehavior for ActiveModel {}
+        }
+
+        // Run sync_entity for the test entity. Should create the table.
+        sql.sync_entity::<test_entity::Entity>().await;
+
+        // Verify that the table now exists in sqlite_master
+        let res = sql
+            .db
+            .query_all(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='__test_table'"
+                    .to_string(),
+            ))
+            .await
+            .expect("query failed");
+
+        assert!(
+            !res.is_empty(),
+            "Expected __test_table to exist after sync_entity"
+        );
     }
 }
