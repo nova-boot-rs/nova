@@ -4,8 +4,8 @@
 
 Build resilient, observable, and scalable services with first-class plugins for databases, messaging, discovery, and resilience primitives. Nova reduces integration work so you can focus on business logic.
 
-<!-- [![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot) -->
-<!-- [![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot) -->
+[![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot)
+[![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot)
 [![CI](https://github.com/nova-boot/nova/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/nova/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 ---
