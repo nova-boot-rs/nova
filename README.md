@@ -4,8 +4,8 @@
 
 Build resilient, observable, and scalable services with first-class plugins for databases, messaging, discovery, and resilience primitives. Nova reduces integration work so you can focus on business logic.
 
-<!-- [![Crates.io](https://img.shields.io/crates/v/nova-core)](https://crates.io/crates/nova-core) -->
-<!-- [![Docs](https://docs.rs/nova-core/badge.svg)](https://docs.rs/nova-core) -->
+<!-- [![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot) -->
+<!-- [![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot) -->
 [![CI](https://github.com/nova-boot/nova/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/nova/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 ---
@@ -19,12 +19,12 @@ Add the crates you need to `Cargo.toml` (choose plugins you need):
 
 ```toml
 [dependencies]
-nova-core = "0.2"
+nova-boot = "0.2"
 # add plugin crates as needed
-nova-sql = "0.2"          # optional: SQL support (SeaORM)
-nova-nosql = "0.2"        # optional: NoSQL adapters
-nova-messaging = "0.2"    # optional: Kafka/RabbitMQ/NATS
-nova-observability = "0.2" # optional: tracing, metrics, OpenAPI
+nova-boot-sql = "0.2"          # optional: SQL support (SeaORM)
+nova-boot-nosql = "0.2"        # optional: NoSQL adapters
+nova-boot-messaging = "0.2"    # optional: Kafka/RabbitMQ/NATS
+nova-boot-observability = "0.2" # optional: tracing, metrics, OpenAPI
 ```
 
 Tip: prefer adding only the plugins you use to keep binary size small. Use workspace dependency overrides for local development.
@@ -50,15 +50,15 @@ Add the crates you need to `Cargo.toml`:
 
 ```toml
 [dependencies]
-nova-core = "0.2"
-nova-sql = "0.2"
-nova-observability = "0.2"
+nova-boot = "0.2"
+nova-boot-sql = "0.2"
+nova-boot-observability = "0.2"
 ```
 
 Create a minimal service:
 
 ```rust
-use nova_core::prelude::*;
+use nova_boot::prelude::*;
 use nova_sql::NovaSql;
 use nova_observability::ObservabilityPlugin;
 
@@ -89,8 +89,8 @@ cargo run --bin hello-service
 ## Key features
 
 - Plugin architecture: modular runtime with `NovaPlugin` for middleware and services.
-- Storage: `nova-sql`, `nova-nosql`, `nova-graphdb` (SeaORM, MongoDB, Neo4j, etc.).
-- Messaging: `nova-messaging` with Kafka / RabbitMQ / NATS + DLQ support.
+- Storage: `nova-boot-sql`, `nova-boot-nosql`, `nova-boot-graphdb` (SeaORM, MongoDB, Neo4j, etc.).
+- Messaging: `nova-boot-messaging` with Kafka / RabbitMQ / NATS + DLQ support.
 - Resilience: circuit breaker, retries, bulkheads, distributed rate limiting.
 - Observability: structured logging, tracing, Prometheus metrics, OpenAPI hooks.
 - Developer ergonomics: `#[get|post]`, `#[validate]`, and semantic request extractors.
@@ -102,12 +102,12 @@ cargo run --bin hello-service
 
 See the `crates/` folder for all workspace members. Notable crates:
 
-- `nova-core` — runtime, plugin trait, app lifecycle
-- `nova-macros` — routing & validation macros
-- `nova-sql`, `nova-nosql`, `nova-graphdb`, `nova-messaging` — data & messaging plugins
-- `nova-observability` — tracing, metrics, OpenAPI
-- `nova-client` — discovery-aware HTTP client
-- `nova-test` — integration test harness (reprioritized)
+- `nova-boot` — runtime, plugin trait, app lifecycle
+- `nova-boot-macros` — routing & validation macros
+- `nova-boot-sql`, `nova-boot-nosql`, `nova-boot-graphdb`, `nova-boot-messaging` — data & messaging plugins
+- `nova-boot-observability` — tracing, metrics, OpenAPI
+- `nova-boot-client` — discovery-aware HTTP client
+- `nova-boot-test` — integration test harness (reprioritized)
 
 ---
 
@@ -115,20 +115,20 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 | Crate | Purpose |
 |-------|---------|
-| `nova-core` | Runtime, plugin trait, app lifecycle, configuration |
-| `nova-macros` | Routing, validation, and service macros |
-| `nova-observability` | Tracing, metrics, OpenAPI |
-| `nova-middleware` | Rate limiting, circuit breaker, retry |
-| `nova-resilience-store` | Distributed state for resilience (Redis, in‑memory) |
-| `nova-sql` | SeaORM integration with read/write splitting and caching |
-| `nova-nosql` | Document & key‑value stores (MongoDB, Redis) |
-| `nova-graphdb` | Graph databases (Neo4j, SurrealDB) |
-| `nova-messaging` | Kafka, RabbitMQ, NATS with DLQ support |
-| `nova-data-patterns` | CQRS, Event Sourcing, Saga |
-| `nova-discovery` | Service discovery trait and backends (Consul, etcd, DNS, static) |
-| `nova-client` | Smart HTTP client with discovery‑aware load balancing |
-| `nova-gateway` | API Gateway (planned) |
-| `nova-auth` | Authentication & authorization (planned) |
+| `nova-boot` | Runtime, plugin trait, app lifecycle, configuration |
+| `nova-boot-macros` | Routing, validation, and service macros |
+| `nova-boot-observability` | Tracing, metrics, OpenAPI |
+| `nova-boot-middleware` | Rate limiting, circuit breaker, retry |
+| `nova-boot-resilience-store` | Distributed state for resilience (Redis, in‑memory) |
+| `nova-boot-sql` | SeaORM integration with read/write splitting and caching |
+| `nova-boot-nosql` | Document & key‑value stores (MongoDB, Redis) |
+| `nova-boot-graphdb` | Graph databases (Neo4j, SurrealDB) |
+| `nova-boot-messaging` | Kafka, RabbitMQ, NATS with DLQ support |
+| `nova-boot-data-patterns` | CQRS, Event Sourcing, Saga |
+| `nova-boot-discovery` | Service discovery trait and backends (Consul, etcd, DNS, static) |
+| `nova-boot-client` | Smart HTTP client with discovery‑aware load balancing |
+| `nova-boot-gateway` | API Gateway (planned) |
+| `nova-boot-auth` | Authentication & authorization (planned) |
 
 
 ---

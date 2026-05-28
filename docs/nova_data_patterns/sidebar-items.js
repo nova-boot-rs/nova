@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["cqrs","error","event_sourcing","saga"]};

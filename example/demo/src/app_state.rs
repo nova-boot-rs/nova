@@ -1,5 +1,7 @@
-use nova_core::{Deserialize, ReloadableConfig, Serialize};
+use nova_boot::{Deserialize, ReloadableConfig, Serialize};
 
+// The app state carries the live config handle so handlers and startup code
+// can share the same reloaded settings without manual file polling.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuntimeConfig {
     pub app_label: String,
@@ -19,6 +21,8 @@ impl Default for RuntimeConfig {
     }
 }
 
+// `AppState` is intentionally small in the demo so the focus stays on the
+// framework features rather than bespoke state management.
 #[derive(Clone)]
 pub struct AppState {
     pub runtime_config: ReloadableConfig<RuntimeConfig>,

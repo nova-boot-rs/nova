@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["nova_sql",[]]]);
+    var implementors = Object.fromEntries([["nova_boot_sql",[]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[15]}
+//{"start":57,"fragment_lengths":[20]}

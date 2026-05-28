@@ -1,0 +1,49 @@
+[package]
+name = "nova-boot"
+version.workspace = true
+edition.workspace = true
+description = "Core runtime types and utilities for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+# The Web Engine
+axum.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http = { workspace = true, features = ["request-id"] }
+inventory.workspace = true
+
+# Optional TLS support for `run_tls`
+axum-server = { workspace = true,  features = ["tls-rustls-no-provider"], optional = true }
+
+# Serialization & Utilities
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+async-trait.workspace = true
+
+# Database support (optional)
+sea-orm = { workspace = true, optional = true }
+
+# Internal Macros
+nova-boot-macros.workspace = true
+nova-boot-resilience-store.workspace = true
+
+[dev-dependencies]
+serial_test = "3.4"
+
+
+[features]
+default = []
+database = ["sea-orm"]
+redis-store = ["nova-boot-resilience-store/redis-store"]
+tls = ["dep:axum-server"]

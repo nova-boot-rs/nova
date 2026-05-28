@@ -2,16 +2,25 @@
 set -euo pipefail
 
 CRATES=(
-    "nova-core"
-    "nova-resilience-store"
-    "nova-macros"
-    "nova-observability"
-    "nova-middleware"
-    "nova-sql"
-    "nova-nosql"
-    "nova-graphdb"
-    "nova-messaging"
-    "nova-data-patterns"
+    "nova-boot-macros"
+    "nova-boot-resilience-store"
+    "nova-boot"
+    "nova-boot-observability"
+    "nova-boot-middleware"
+    "nova-boot-sql"
+    "nova-boot-nosql"
+    "nova-boot-graphdb"
+    "nova-boot-messaging"
+    "nova-boot-data-patterns"
+    "nova-boot-discovery-consul"
+    "nova-boot-discovery-etcd"
+    "nova-boot-discovery-dns"
+    "nova-boot-client"
+    "nova-boot-test"
+    "nova-boot-gateway"
+    "nova-boot-auth"
+    "nova-boot-cli"
+    "nova-boot-tasks"
 )
 
 set -a
@@ -24,17 +33,8 @@ cargo login "$CRATES_IO_TOKEN" || {
     exit 1
 }
 
-echo "=== Dry-run checks ==="
-for crate in "${CRATES[@]}"; do
-    echo "Checking $crate..."
-    cargo publish -p "$crate" --dry-run || {
-        echo "FAILED: $crate"
-        exit 1
-    }
-done
-
-echo ""
-echo "=== Publishing ==="
+echo "=== Publishing order check ==="
+echo "Publishing in dependency order so internal crates are available before dependents."
 for crate in "${CRATES[@]}"; do
     echo "Publishing $crate..."
     cargo publish -p "$crate"

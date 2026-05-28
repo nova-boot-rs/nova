@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["demo",[["impl ModelTrait for <a class=\"struct\" href=\"demo/entity/user/struct.Model.html\" title=\"struct demo::entity::user::Model\">Model</a>"]]],["nova_sql",[]]]);
+    var implementors = Object.fromEntries([["demo",[["impl ModelTrait for <a class=\"struct\" href=\"demo/entities/task/struct.Model.html\" title=\"struct demo::entities::task::Model\">Model</a>"],["impl ModelTrait for <a class=\"struct\" href=\"demo/entities/user/struct.Model.html\" title=\"struct demo::entities::user::Model\">Model</a>"]]],["nova_boot_sql",[]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[151,16]}
+//{"start":57,"fragment_lengths":[300,21]}

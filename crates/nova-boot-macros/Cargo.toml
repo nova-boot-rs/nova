@@ -1,0 +1,22 @@
+[package]
+name = "nova-boot-macros"
+edition.workspace = true
+version.workspace = true
+description = "Proc-macro helpers and route/derive macros for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+proc-macro = true # Crucial: This tells Rust this is a macro crate
+
+[dependencies]
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["task_repo","user_repo"]};

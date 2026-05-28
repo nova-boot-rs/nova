@@ -108,29 +108,29 @@ jobs:
             - name: Redis integration tests
               env:
                 NOVA_TEST_REDIS_URL: redis://127.0.0.1:6379/
-              run: cargo test -p nova-core --features redis-store -- --ignored redis
+              run: cargo test -p nova-boot --features redis-store -- --ignored redis
 
             - name: Kafka integration tests
               env:
                 NOVA_TEST_KAFKA_BROKERS: 127.0.0.1:9092
-              run: cargo test -p nova-messaging --test kafka_integration
+              run: cargo test -p nova-boot-messaging --test kafka_integration
 
             - name: RabbitMQ integration tests
               env:
                 NOVA_TEST_AMQP_URL: amqp://127.0.0.1:5672
-              run: cargo test -p nova-messaging --test rabbitmq_integration
+              run: cargo test -p nova-boot-messaging --test rabbitmq_integration
 
             - name: NATS integration tests
               env:
                 NATS_URL: nats://127.0.0.1:4222
-              run: cargo test -p nova-messaging --test nats_integration
+              run: cargo test -p nova-boot-messaging --test nats_integration
 
             - name: Neo4j integration tests
               env:
                 NEO4J_URL: http://127.0.0.1:7474
                 NEO4J_USER: neo4j
                 NEO4J_PASSWORD: nova-test-password
-              run: cargo test -p nova-graphdb --test neo4j_integration
+              run: cargo test -p nova-boot-graphdb --test neo4j_integration
 
             - name: Start SurrealDB
               run: |
@@ -156,18 +156,18 @@ jobs:
                 SURREALDB_DB: main
                 SURREALDB_USER: root
                 SURREALDB_PASSWORD: root
-              run: cargo test -p nova-graphdb --test surreal_integration
+              run: cargo test -p nova-boot-graphdb --test surreal_integration
 
             - name: SQL replica integration tests
-              run: cargo test -p nova-sql --test replica
+              run: cargo test -p nova-boot-sql --test replica
 
             - name: SQL Redis cache integration tests
               env:
                 REDIS_URL: redis://127.0.0.1:6379/
-              run: cargo test -p nova-sql --test redis_integration
+              run: cargo test -p nova-boot-sql --test redis_integration
 
             - name: NoSQL MongoDB integration tests
               env:
                 NOVA_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
                 NOVA_TEST_MONGODB_DB: nova_test
-              run: cargo test -p nova-nosql --test mongodb_integration
+              run: cargo test -p nova-boot-nosql --test mongodb_integration

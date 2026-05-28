@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "Nova Demo - API Tests",
+    "_postman_id": "b6f9b8d6-0000-4000-8000-000000000000",
+    "description": "API test collection for the Nova demo app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tenantId", "value": "acme" }
+  ],
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"alice\",\n  \"email\": \"alice@example.com\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/users" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('Response success & data present', function () { var json = pm.response.json(); pm.expect(json.success).to.eql(true); pm.expect(json.data).to.be.an('object'); });",
+              "pm.test('Created user shape', function () { var data = pm.response.json().data; pm.expect(data).to.have.property('id'); pm.expect(data).to.have.property('username'); pm.expect(data).to.have.property('email'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/users" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response envelope', function () { var json = pm.response.json(); pm.expect(json.success).to.eql(true); pm.expect(json.data).to.be.an('object'); });",
+              "pm.test('Users list shape', function () { var items = pm.response.json().data.items; pm.expect(items).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DB Status",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/db-status" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response has backend and connected flag', function () { var json = pm.response.json(); pm.expect(json.success).to.eql(true); pm.expect(json.data).to.have.property('backend'); pm.expect(json.data).to.have.property('connected'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant Task",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Sample Task\",\n  \"payload\": { \"note\": \"demo\" }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/tenants/{{tenantId}}/tasks" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('Task created shape', function () { var json = pm.response.json(); pm.expect(json.success).to.eql(true); var data = json.data; pm.expect(data).to.have.property('id'); pm.expect(data).to.have.property('title'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Tenant Tasks",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/tenants/{{tenantId}}/tasks" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Tenant tasks list shape', function () { var json = pm.response.json(); pm.expect(json.success).to.eql(true); pm.expect(json.data).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
