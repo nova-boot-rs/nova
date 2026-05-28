@@ -133,11 +133,10 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 ---
 
-## Docs & Roadmap
+## Example & Roadmap
 
 - Full roadmap: [ROADMAP.md](ROADMAP.md)
 - Examples: [example/](example/)
-- Document: [docs.rs](https://docs.rs/nova-boot/0.1.1)
 ---
 
 ## Contributing
