@@ -136,11 +136,8 @@ See the `crates/` folder for all workspace members. Notable crates:
 ## Docs & Roadmap
 
 - Full roadmap: [ROADMAP.md](ROADMAP.md)
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Examples: [example/](example/)
-
-If you want an in-depth rationale and framework comparison, see `docs/ARCHITECTURE.md`.
-
+- Document: [docs.rs]()
 ---
 
 ## Contributing

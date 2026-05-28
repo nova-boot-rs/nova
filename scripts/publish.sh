@@ -15,6 +15,7 @@ CRATES=(
     "nova-boot-discovery-consul"
     "nova-boot-discovery-etcd"
     "nova-boot-discovery-dns"
+    "nova-boot-discovery-static"
     "nova-boot-client"
     "nova-boot-test"
     "nova-boot-gateway"
