@@ -156,10 +156,6 @@ Built with ❤️ for the Rust community. If Nova helps you, consider sponsoring
 
 ## License
 
-Licensed under either of
-
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
+- MIT license ([LICENSE-MIT](LICENSE))
 
 ---
