@@ -40,7 +40,7 @@ Tip: prefer adding only the plugins you use to keep binary size small. Use works
 
 ## Why Nova?
 
-Nova is a batteries‑included application framework built on Axum that removes repetitive integration work so teams can ship production services faster. For the long-form rationale and a framework comparison, see [docs/WHY_NOVA.md](docs/WHY_NOVA.md).
+Nova is a batteries‑included application framework built on Axum that removes repetitive integration work so teams can ship production services faster. For the long-form rationale and a framework comparison.
 
 ---
 
@@ -70,7 +70,7 @@ async fn main() {
     let db = NovaSql::connect("sqlite::memory:", false).await;
     let state = AppState::new(db);
 
-    NovaApp::new("hello-service", 3000, state)
+    NovaApp::new("hello-service", 8080, state)
         .add_plugin(ObservabilityPlugin::new("hello-service"))
         .run()
         .await;
@@ -137,7 +137,7 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 - Full roadmap: [ROADMAP.md](ROADMAP.md)
 - Examples: [example/](example/)
-- Document: [docs.rs]()
+- Document: [docs.rs](https://docs.rs/nova-boot/0.1.1)
 ---
 
 ## Contributing
@@ -163,5 +163,3 @@ Licensed under either of
 at your option.
 
 ---
-
-Built with ❤️ for the Rust community. If Nova saves you time, consider [sponsoring the project](https://github.com/sponsors/nova-boot-rs).
