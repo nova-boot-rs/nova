@@ -178,8 +178,8 @@ impl From<serde_json::Error> for NovaError {
     }
 }
 
-impl From<nova_resilience_store::ResilienceError> for NovaError {
-    fn from(err: nova_resilience_store::ResilienceError) -> Self {
+impl From<nova_boot_resilience_store::ResilienceError> for NovaError {
+    fn from(err: nova_boot_resilience_store::ResilienceError) -> Self {
         NovaError::InternalError(err.to_string())
     }
 }

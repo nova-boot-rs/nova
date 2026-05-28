@@ -1,9 +1,0 @@
-(function() {
-    var implementors = Object.fromEntries([["nova_boot_messaging",[["impl <a class=\"trait\" href=\"nova_boot/traits/trait.NovaPlugin.html\" title=\"trait nova_boot::traits::NovaPlugin\">NovaPlugin</a> for <a class=\"struct\" href=\"nova_boot_messaging/wrapper/struct.NovaMessaging.html\" title=\"struct nova_boot_messaging::wrapper::NovaMessaging\">NovaMessaging</a>"]]],["nova_graphdb",[["impl <a class=\"trait\" href=\"nova_boot/traits/trait.NovaPlugin.html\" title=\"trait nova_boot::traits::NovaPlugin\">NovaPlugin</a> for <a class=\"struct\" href=\"nova_graphdb/wrapper/struct.NovaGraphDb.html\" title=\"struct nova_graphdb::wrapper::NovaGraphDb\">NovaGraphDb</a>"]]],["nova_nosql",[["impl <a class=\"trait\" href=\"nova_boot/traits/trait.NovaPlugin.html\" title=\"trait nova_boot::traits::NovaPlugin\">NovaPlugin</a> for <a class=\"struct\" href=\"nova_nosql/wrapper/struct.NovaNoSql.html\" title=\"struct nova_nosql::wrapper::NovaNoSql\">NovaNoSql</a>"]]],["nova_observability",[["impl <a class=\"trait\" href=\"nova_boot/traits/trait.NovaPlugin.html\" title=\"trait nova_boot::traits::NovaPlugin\">NovaPlugin</a> for <a class=\"struct\" href=\"nova_observability/struct.ObservabilityPlugin.html\" title=\"struct nova_observability::ObservabilityPlugin\">ObservabilityPlugin</a>"]]],["nova_sql",[["impl <a class=\"trait\" href=\"nova_boot/traits/trait.NovaPlugin.html\" title=\"trait nova_boot::traits::NovaPlugin\">NovaPlugin</a> for <a class=\"struct\" href=\"nova_sql/connection/struct.NovaSql.html\" title=\"struct nova_sql::connection::NovaSql\">NovaSql</a>"]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":57,"fragment_lengths":[328,302,290,327,284]}

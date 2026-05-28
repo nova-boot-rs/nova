@@ -35,8 +35,8 @@ async-trait.workspace = true
 sea-orm = { workspace = true, optional = true }
 
 # Internal Macros
-nova-macros = { path = "../nova-macros", version = "0.1.0" }
-nova-resilience-store = { path = "../nova-resilience-store", version = "0.1.0" }
+nova-boot-macros.workspace = true
+nova-boot-resilience-store.workspace = true
 
 [dev-dependencies]
 serial_test = "3.4"
@@ -45,5 +45,5 @@ serial_test = "3.4"
 [features]
 default = []
 database = ["sea-orm"]
-redis-store = ["nova-resilience-store/redis-store"]
+redis-store = ["nova-boot-resilience-store/redis-store"]
 tls = ["dep:axum-server"]

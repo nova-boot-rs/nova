@@ -2,16 +2,17 @@
 set -euo pipefail
 
 CRATES=(
-    "nova-macros"
-    "nova-resilience-store"
+    "nova-boot-macros"
+    "nova-boot-resilience-store"
     "nova-boot"
-    "nova-observability"
+    "nova-boot-observability"
     "nova-boot-middleware"
-    "nova-sql"
-    "nova-nosql"
-    "nova-graphdb"
+    "nova-boot-sql"
+    "nova-boot-nosql"
+    "nova-boot-graphdb"
     "nova-boot-messaging"
     "nova-boot-data-patterns"
+    
 )
 
 set -a

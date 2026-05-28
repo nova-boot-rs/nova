@@ -1,0 +1,22 @@
+[package]
+name = "nova-boot-resilience-store"
+edition.workspace = true
+version.workspace = true
+description = "Resilience store abstractions and adapters (Redis) for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+async-trait.workspace = true
+redis = { workspace = true, optional = true, features = ["aio", "tokio-comp"] }
+
+[features]
+default = []
+redis-store = ["redis"]

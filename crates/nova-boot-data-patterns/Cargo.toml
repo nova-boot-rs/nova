@@ -1,0 +1,33 @@
+[package]
+name = "nova-boot-data-patterns"
+edition.workspace = true
+version.workspace = true
+description = "CQRS, event sourcing and saga patterns for Nova"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["microservices", "axum", "web", "nova"]
+categories = ["web-programming::http-server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nova-boot.workspace = true
+nova-boot-sql = { workspace = true, optional = true }
+nova-boot-nosql = { workspace = true, optional = true }
+nova-boot-messaging = { workspace = true, optional = true }
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+redis = { workspace = true, optional = true }
+
+[features]
+default = []
+sql-bridge = ["nova-boot-sql"]
+nosql-bridge = ["nova-boot-nosql"]
+messaging-bridge = ["nova-boot-messaging"]
+redis-store = ["dep:redis"]

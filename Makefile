@@ -28,3 +28,9 @@ proto:
 	else \
 		bash scripts/protoc-wrapper.sh --rust_out=src/ $$proto_files; \
 	fi
+
+docs:
+	cargo doc --workspace --all-features --no-deps
+	cp -r target/doc/* docs/
+
+	

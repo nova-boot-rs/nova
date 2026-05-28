@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["max_length","min_length","required_string","validate_request"],"struct":["ValidationErrors"],"trait":["NovaValidate"]};

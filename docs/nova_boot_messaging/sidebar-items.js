@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["envelope","error","kafka","memory","nats","plugin","rabbitmq","traits","wrapper"],"struct":["NovaBus"]};

@@ -3,7 +3,7 @@ use nova_boot::{
     Deserialize, Json, NovaError, NovaRequest, NovaResponse, NovaResult, NovaState, Serialize,
     axum::extract::Query, axum::http::StatusCode, get, post,
 };
-use nova_sql::NovaDb;
+use nova_boot_sql::NovaDb;
 
 use nova_boot_middleware::{
     ApiResponse, ApiVersion, ListResponse, PaginatedResponse, PaginationQuery, VersionedResponse,
@@ -26,7 +26,7 @@ fn demo_openapi_fragment() -> serde_json::Value {
 }
 
 nova_boot::inventory::submit! {
-    nova_observability::OpenApiHook {
+    nova_boot_observability::OpenApiHook {
         name: "demo-tag-fragment",
         provider: demo_openapi_fragment,
     }

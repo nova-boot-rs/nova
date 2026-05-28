@@ -1,5 +1,5 @@
 use nova_boot::{NovaApp, spawn_json_file_hot_reloader};
-use nova_sql::*;
+use nova_boot_sql::*;
 use std::time::Duration;
 
 mod app_state;

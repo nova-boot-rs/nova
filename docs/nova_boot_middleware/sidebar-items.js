@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["bulkhead_middleware","circuit_breaker_middleware","circuit_breaker_middleware_boxed","rate_limiter_middleware","rate_limiter_middleware_boxed"],"mod":["resilience","response","validation"]};

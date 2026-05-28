@@ -1,18 +1,19 @@
 [workspace]
 members = [
     "crates/nova-boot",
-    "crates/nova-macros",
-    "crates/nova-middleware",
-    "crates/nova-observability",
-    "crates/nova-resilience-store",
+    "crates/nova-boot-macros",
+    "crates/nova-boot-middleware",
+    "crates/nova-boot-observability",
+    "crates/nova-boot-resilience-store",
     "crates/plugins/*",
     "crates/discovery/*",
-    "crates/nova-client",
-    "crates/nova-gateway",
-    "crates/nova-auth",
-    "crates/nova-cli",
-    "crates/nova-test",
-    "example/demo", "crates/nova-data-patterns",
+    "crates/nova-boot-client",
+    "crates/nova-boot-gateway",
+    "crates/nova-boot-auth",
+    "crates/nova-boot-cli",
+    "crates/nova-boot-test",
+    "crates/nova-boot-data-patterns",
+    "example/demo", "crates/nova-boot-tasks", 
 ]
 resolver = "2"
 
@@ -53,3 +54,25 @@ proc-macro2 = "1.0"
 
 
 redis = "0.23"
+
+# Internal crates
+nova-boot-macros = { path = "crates/nova-boot-macros", version = "0.1.1" }
+nova-boot-resilience-store = { path = "crates/nova-boot-resilience-store", version = "0.1.1" }
+nova-boot = { path = "crates/nova-boot", version = "0.1.1" }
+nova-boot-middleware = { path = "crates/nova-boot-middleware", version = "0.1.1" }
+nova-boot-observability = { path = "crates/nova-boot-observability", version = "0.1.1" }
+nova-boot-client = { path = "crates/nova-boot-client", version = "0.1.1" }
+nova-boot-gateway = { path = "crates/nova-boot-gateway", version = "0.1.1" }
+nova-boot-auth = { path = "crates/nova-boot-auth", version = "0.1.1" }
+nova-boot-cli = { path = "crates/nova-boot-cli", version = "0.1.1" }
+nova-boot-test = { path = "crates/nova-boot-test", version = "0.1.1" }
+nova-boot-data-patterns = { path = "crates/nova-boot-data-patterns", version = "0.1.1" }
+nova-boot-discovery-static = { path = "crates/discovery/nova-boot-discovery-static", version = "0.1.1" }
+nova-boot-discovery-consul = { path = "crates/discovery/nova-boot-discovery-consul", version = "0.1.1" }
+nova-boot-discovery-etcd = { path = "crates/discovery/nova-boot-discovery-etcd", version = "0.1.1" }
+nova-boot-tasks = { path = "crates/nova-boot-tasks", version = "0.1.1" }
+nova-boot-sql = { path = "crates/plugins/nova-boot-sql", version = "0.1.1" }
+nova-boot-nosql = { path = "crates/plugins/nova-boot-nosql", version = "0.1.1" }
+nova-boot-messaging = { path = "crates/plugins/nova-boot-messaging", version = "0.1.1" }
+nova-boot-graphql = { path = "crates/plugins/nova-boot-graphql", version = "0.1.1" }
+

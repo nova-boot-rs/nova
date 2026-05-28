@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["builders","error","memory","neo4j","plugin","surreal","traits","types","wrapper"],"struct":["NovaGraph"]};

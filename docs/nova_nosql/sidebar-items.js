@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["error","mapper","memory","mongo","plugin","redis","traits","types","wrapper"],"struct":["NovaDocs"]};

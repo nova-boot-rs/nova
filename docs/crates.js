@@ -1,2 +1,0 @@
-window.ALL_CRATES = ["demo","nova_boot","nova_boot_auth","nova_boot_cli","nova_boot_client","nova_boot_data_patterns","nova_boot_discovery","nova_boot_gateway","nova_boot_messaging","nova_boot_middleware","nova_boot_test","nova_discovery_consul","nova_discovery_dns","nova_discovery_etcd","nova_discovery_static","nova_graphdb","nova_macros","nova_nosql","nova_observability","nova_resilience_store","nova_sql"];
-//{"start":21,"fragment_lengths":[6,12,17,16,19,26,22,20,22,23,17,24,21,22,24,15,14,13,21,24,11]}

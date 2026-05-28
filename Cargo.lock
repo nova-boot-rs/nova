@@ -1145,8 +1145,8 @@ dependencies = [
  "axum 0.8.9",
  "nova-boot",
  "nova-boot-middleware",
- "nova-observability",
- "nova-sql",
+ "nova-boot-observability",
+ "nova-boot-sql",
  "sea-orm",
  "serde",
  "serde_json",
@@ -2616,8 +2616,8 @@ dependencies = [
  "axum 0.8.9",
  "axum-server",
  "inventory",
- "nova-macros",
- "nova-resilience-store",
+ "nova-boot-macros",
+ "nova-boot-resilience-store",
  "sea-orm",
  "serde",
  "serde_json",
@@ -2648,8 +2648,8 @@ dependencies = [
  "async-trait",
  "nova-boot",
  "nova-boot-messaging",
- "nova-nosql",
- "nova-sql",
+ "nova-boot-nosql",
+ "nova-boot-sql",
  "redis",
  "serde",
  "serde_json",
@@ -2658,12 +2658,69 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-boot-discovery"
+name = "nova-boot-discovery-consul"
 version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "nova-boot",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "nova-boot-discovery-dns"
+version = "0.1.1"
+
+[[package]]
+name = "nova-boot-discovery-etcd"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "etcd-client",
+ "nova-boot",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "nova-boot-discovery-static"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "nova-boot",
+ "tokio",
+]
 
 [[package]]
 name = "nova-boot-gateway"
 version = "0.1.1"
+
+[[package]]
+name = "nova-boot-graphdb"
+version = "0.1.1"
+dependencies = [
+ "async-trait",
+ "axum 0.8.9",
+ "nova-boot",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "nova-boot-macros"
+version = "0.1.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
 
 [[package]]
 name = "nova-boot-messaging"
@@ -2689,79 +2746,14 @@ dependencies = [
  "async-trait",
  "axum 0.8.9",
  "nova-boot",
- "nova-resilience-store",
+ "nova-boot-resilience-store",
  "serde",
  "serde_json",
  "tokio",
 ]
 
 [[package]]
-name = "nova-boot-test"
-version = "0.1.1"
-
-[[package]]
-name = "nova-discovery-consul"
-version = "0.1.1"
-dependencies = [
- "async-trait",
- "nova-boot",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "nova-discovery-dns"
-version = "0.1.1"
-
-[[package]]
-name = "nova-discovery-etcd"
-version = "0.1.1"
-dependencies = [
- "async-trait",
- "etcd-client",
- "nova-boot",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "nova-discovery-static"
-version = "0.1.1"
-dependencies = [
- "async-trait",
- "nova-boot",
- "tokio",
-]
-
-[[package]]
-name = "nova-graphdb"
-version = "0.1.1"
-dependencies = [
- "async-trait",
- "axum 0.8.9",
- "nova-boot",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "nova-macros"
-version = "0.1.1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "nova-nosql"
+name = "nova-boot-nosql"
 version = "0.1.1"
 dependencies = [
  "async-trait",
@@ -2776,7 +2768,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-observability"
+name = "nova-boot-observability"
 version = "0.1.1"
 dependencies = [
  "axum 0.8.9",
@@ -2789,7 +2781,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-resilience-store"
+name = "nova-boot-resilience-store"
 version = "0.1.1"
 dependencies = [
  "async-trait",
@@ -2797,7 +2789,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nova-sql"
+name = "nova-boot-sql"
 version = "0.1.1"
 dependencies = [
  "async-trait",
@@ -2811,6 +2803,14 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
+
+[[package]]
+name = "nova-boot-tasks"
+version = "0.1.1"
+
+[[package]]
+name = "nova-boot-test"
+version = "0.1.1"
 
 [[package]]
 name = "nu-ansi-term"

@@ -100,10 +100,10 @@ Let services find and talk to each other dynamically.
 
 ### Discovery Abstraction
 - [DONE] `Discovery` trait in `nova-boot`
-- [DONE] Static list plugin for dev/testing (`nova-discovery-static`)
-- [DONE] Consul plugin (`nova-discovery-consul`)
-- [DONE] etcd plugin (`nova-discovery-etcd`)
-- [PLANNED] DNS/Kubernetes plugin (`nova-discovery-dns`)
+- [DONE] Static list plugin for dev/testing (`nova-boot-discovery-static`)
+- [DONE] Consul plugin (`nova-boot-discovery-consul`)
+- [DONE] etcd plugin (`nova-boot-discovery-etcd`)
+- [PLANNED] DNS/Kubernetes plugin (`nova-boot-discovery-dns`)
 
 ### Service Registration
 - [PLANNED] Auto-registration on startup with `#[service(name = "user-api")]`
@@ -215,7 +215,7 @@ AuthN and AuthZ integrated across the framework. Pluggable — no forced user mo
 
 Tools that make building with Nova fast and enjoyable.
 
-### CLI (`nova-cli`) (PLANNED)
+### CLI (`nova-boot-cli`) (PLANNED)
 - [PLANNED] `nova new <name>` — scaffold a service
 - [PLANNED] `nova new <name> --template rest-api|event-worker|gateway|grpc` — starter templates (NEW)
 - [PLANNED] `nova generate entity <name>` — generate CRUD
@@ -227,8 +227,8 @@ Tools that make building with Nova fast and enjoyable.
 - [PLANNED] `nova docker build` — optimized container builds
 - [PLANNED] `nova deploy` — push to cloud platforms
 
-### Background Jobs / Task Queue (nova-tasks) (NEW)
-- [PLANNED] `nova-tasks` crate: lightweight, framework-integrated task queue
+### Background Jobs / Task Queue (`nova-boot-tasks`) (PLANNED)
+- [PLANNED] `nova-boot-tasks` crate scaffolded; implementation and adapters still pending
 - [PLANNED] In-memory queue implementation for development and tests
 - [PLANNED] Redis-backed queue adapter for production (atomic push/pop, visibility timeout)
 - [PLANNED] `#[background_job]` macro (proc-macro) for easy job definition
@@ -346,25 +346,24 @@ Security      Developer      Delivery &
 ```
 crates/
 ├── nova-boot/                  # Phase 1
-├── nova-macros/                # Phase 3
-├── nova-middleware/            # Phase 4
-├── nova-observability/         # Phase 2-3
-├── nova-resilience-store/      # Phase 4
-├── nova-data-patterns/         # Phase 4 (CQRS, Event Sourcing, Saga)
+├── nova-boot-macros/                # Phase 3
+├── nova-boot-middleware/            # Phase 4
+├── nova-boot-observability/         # Phase 2-3
+├── nova-boot-resilience-store/      # Phase 4
+├── nova-boot-data-patterns/         # Phase 4 (CQRS, Event Sourcing, Saga)
 ├── plugins/
-│   ├── nova-sql/               # Phase 4
-│   ├── nova-nosql/             # Phase 4
-│   ├── nova-graphdb/           # Phase 4
+│   ├── nova-boot-sql/               # Phase 4
+│   ├── nova-boot-nosql/             # Phase 4
+│   ├── nova-boot-graphdb/           # Phase 4
 │   └── nova-boot-messaging/         # Phase 4
 ├── discovery/
-│   ├── nova-discovery/         # Phase 5 (trait)
-│   ├── nova-discovery-consul/  # Phase 5
-│   ├── nova-discovery-etcd/    # Phase 5
-│   └── nova-discovery-dns/     # Phase 5
-├── nova-client/                # Phase 5
-├── nova-gateway/               # Phase 6
-├── nova-auth/                  # Phase 7
-├── nova-test/                  # Phase 5 (reprioritized)
-├── nova-cli/                   # Phase 8
-└── nova-tasks/                 # Phase 8 (new: lightweight in-process task queue)
+│   ├── nova-boot-discovery-consul/  # Phase 5
+│   ├── nova-boot-discovery-etcd/    # Phase 5
+│   └── nova-boot-discovery-dns/     # Phase 5
+├── nova-boot-client/                # Phase 5
+├── nova-boot-gateway/               # Phase 6
+├── nova-boot-auth/                  # Phase 7
+├── nova-boot-test/                  # Phase 5 (reprioritized)
+├── nova-boot-cli/                   # Phase 8
+└── nova-boot-tasks/                 # Phase 8 (new: lightweight in-process task queue)
 ```
