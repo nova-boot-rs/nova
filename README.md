@@ -4,8 +4,8 @@
 
 Build resilient, observable, and scalable services with first-class plugins for databases, messaging, discovery, and resilience primitives. Nova reduces integration work so you can focus on business logic.
 
-<!-- [![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot) -->
-<!-- [![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot) -->
+[![Crates.io](https://img.shields.io/crates/v/nova-boot)](https://crates.io/crates/nova-boot)
+[![Docs](https://docs.rs/nova-boot/badge.svg)](https://docs.rs/nova-boot)
 [![CI](https://github.com/nova-boot/nova/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/nova/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 ---
@@ -40,7 +40,7 @@ Tip: prefer adding only the plugins you use to keep binary size small. Use works
 
 ## Why Nova?
 
-Nova is a batteries‑included application framework built on Axum that removes repetitive integration work so teams can ship production services faster. For the long-form rationale and a framework comparison, see [docs/WHY_NOVA.md](docs/WHY_NOVA.md).
+Nova is a batteries‑included application framework built on Axum that removes repetitive integration work so teams can ship production services faster. For the long-form rationale and a framework comparison.
 
 ---
 
@@ -70,7 +70,7 @@ async fn main() {
     let db = NovaSql::connect("sqlite::memory:", false).await;
     let state = AppState::new(db);
 
-    NovaApp::new("hello-service", 3000, state)
+    NovaApp::new("hello-service", 8080, state)
         .add_plugin(ObservabilityPlugin::new("hello-service"))
         .run()
         .await;
@@ -133,14 +133,10 @@ See the `crates/` folder for all workspace members. Notable crates:
 
 ---
 
-## Docs & Roadmap
+## Example & Roadmap
 
 - Full roadmap: [ROADMAP.md](ROADMAP.md)
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Examples: [example/](example/)
-
-If you want an in-depth rationale and framework comparison, see `docs/ARCHITECTURE.md`.
-
 ---
 
 ## Contributing
@@ -159,12 +155,6 @@ Built with ❤️ for the Rust community. If Nova helps you, consider sponsoring
 
 ## License
 
-Licensed under either of
-
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
+- MIT license ([LICENSE-MIT](LICENSE))
 
 ---
-
-Built with ❤️ for the Rust community. If Nova saves you time, consider [sponsoring the project](https://github.com/sponsors/nova-boot-rs).
