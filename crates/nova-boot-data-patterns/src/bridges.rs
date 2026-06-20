@@ -405,8 +405,7 @@ mod sql_bridge_tests {
             .await
             .expect("sqlite in-memory connection");
 
-        use std::sync::Arc;
-        use tokio::sync::RwLock;
+        use std::sync::{Arc, RwLock};
         let pool = nova_boot_sql::ReadWritePool::new(db, Arc::new(RwLock::new(Vec::new())));
         let bridge = SqlCqrsBridge::new(pool);
         bridge.init().await.expect("bridge init should succeed");

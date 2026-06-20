@@ -10,7 +10,7 @@ async fn main() {
 
     // Use the pool for a read or write operation (demo only – no real query).
     let _write = pool.write();
-    let _read = pool.read().await;
+    let _read = pool.read_sync();
 
     println!(
         "connected to database; replicas={}",

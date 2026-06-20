@@ -19,7 +19,7 @@
 //! async fn main() -> anyhow::Result<()> {
 //!     let sql = NovaSql::connect("sqlite::memory:", false).await;
 //!     let pool = sql.read_write_pool();
-//!     // Use `pool.read().await` for queries and `pool.write()` for writes.
+//!     // Use `pool.read_sync()` for queries and `pool.write()` for writes.
 //!     Ok(())
 //! }
 //! ```

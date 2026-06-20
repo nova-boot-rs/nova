@@ -1,9 +1,31 @@
 use super::tenant::{StaticTenantColumnResolver, Tenant, TenantColumnError, TenantColumnResolver};
-use sea_orm::DatabaseConnection;
+use sea_orm::{
+    ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
+    QueryTrait, Select,
+};
 use sea_query::{Alias, DeleteStatement, Expr, SelectStatement, UpdateStatement};
 use std::sync::Arc;
 
-/// Wraps a database connection + tenant for scoped queries.
+/// A database connection coupled with a tenant identity for scoped queries.
+///
+/// `TenantScope` enforces **row-level multi-tenancy** by automatically injecting
+/// tenant-filter predicates into every SELECT, UPDATE, and DELETE statement that
+/// passes through it. When combined with [`ReadWritePool`](crate::ReadWritePool)
+/// you get both read/write splitting and tenant isolation.
+///
+/// # Tenant column resolution
+///
+/// The column used for tenant filtering is resolved through a
+/// [`TenantColumnResolver`]. By default every table uses the column `"tenant_id"`.
+/// A [`StaticTenantColumnResolver`] can be configured with per-table overrides:
+///
+/// ```rust,ignore
+/// let resolver = StaticTenantColumnResolver::new()
+///     .with_default_column("tenant_id")
+///     .with_table_column("organizations", "org_id");
+///
+/// let scope = TenantScope::with_resolver(db, tenant, Arc::new(resolver));
+/// ```
 #[derive(Clone)]
 pub struct TenantScope {
     pub db: DatabaseConnection,
@@ -12,6 +34,10 @@ pub struct TenantScope {
 }
 
 impl TenantScope {
+    /// Create a new scope backed by the given connection and tenant identity.
+    ///
+    /// The resolver defaults to [`StaticTenantColumnResolver`] with column
+    /// `"tenant_id"` for all tables.
     pub fn new(db: DatabaseConnection, tenant: Tenant) -> Self {
         Self {
             db,
@@ -20,6 +46,10 @@ impl TenantScope {
         }
     }
 
+    /// Create a scope with a custom [`TenantColumnResolver`].
+    ///
+    /// Use this when different tables use different column names for the tenant
+    /// identifier (e.g. `"org_id"` for the `organizations` table).
     pub fn with_resolver(
         db: DatabaseConnection,
         tenant: Tenant,
@@ -32,12 +62,16 @@ impl TenantScope {
         }
     }
 
-    /// Get the tenant ID for query filtering.
+    /// Return the tenant ID string used for row-level filtering.
     pub fn tenant_id(&self) -> &str {
         self.tenant.as_str()
     }
 
-    /// Return the resolved tenant column for a table.
+    /// Look up the tenant column name for the given table.
+    ///
+    /// Returns [`TenantColumnError::MissingTenantColumn`] when no column is
+    /// configured for that table (only possible with a strict resolver that has
+    /// no default).
     pub fn tenant_column_for_table(&self, table: &str) -> Result<&str, TenantColumnError> {
         self.resolver.tenant_column_for_table(table).ok_or_else(|| {
             TenantColumnError::MissingTenantColumn {
@@ -46,7 +80,9 @@ impl TenantScope {
         })
     }
 
-    /// Apply tenant where-clause to a select statement.
+    /// Inject a tenant `WHERE` clause into a [`SelectStatement`].
+    ///
+    /// The clause has the form `` `table`.`tenant_col` = "<tenant_id>" ``.
     pub fn apply_select_scope(
         &self,
         table: &str,
@@ -59,7 +95,9 @@ impl TenantScope {
         Ok(())
     }
 
-    /// Apply tenant where-clause to an update statement.
+    /// Inject a tenant `WHERE` clause into an [`UpdateStatement`].
+    ///
+    /// The clause has the form `` `table`.`tenant_col` = "<tenant_id>" ``.
     pub fn apply_update_scope(
         &self,
         table: &str,
@@ -72,7 +110,9 @@ impl TenantScope {
         Ok(())
     }
 
-    /// Apply tenant where-clause to a delete statement.
+    /// Inject a tenant `WHERE` clause into a [`DeleteStatement`].
+    ///
+    /// The clause has the form `` `table`.`tenant_col` = "<tenant_id>" ``.
     pub fn apply_delete_scope(
         &self,
         table: &str,
@@ -85,7 +125,83 @@ impl TenantScope {
         Ok(())
     }
 
-    /// Guard to ensure data being updated belongs to current tenant.
+    // ------------------------------------------------------------------
+    // Tenant-isolated CRUD helpers
+    // ------------------------------------------------------------------
+
+    /// Fetch all rows matching a [`Select`] query, automatically scoped to the
+    /// current tenant.
+    ///
+    /// The tenant filter (`WHERE tenant_col = '<tenant_id>'`) is injected into
+    /// the query before execution.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DbErr::Custom`] when the tenant column cannot be resolved for
+    /// the entity's table.
+    pub async fn fetch_all<E>(&self, mut select_query: Select<E>) -> Result<Vec<E::Model>, DbErr>
+    where
+        E: EntityTrait,
+    {
+        let entity = E::default();
+        let table_name = entity.table_name();
+        let query_builder = select_query.query();
+        self.apply_select_scope(table_name, query_builder)
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        select_query.all(&self.db).await
+    }
+
+    /// Fetch at most one row matching a [`Select`] query, scoped to the current
+    /// tenant.
+    ///
+    /// Returns `Ok(None)` when no matching row exists for this tenant.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DbErr::Custom`] when the tenant column cannot be resolved for
+    /// the entity's table.
+    pub async fn fetch_one<E>(&self, mut select_query: Select<E>) -> Result<Option<E::Model>, DbErr>
+    where
+        E: EntityTrait,
+    {
+        let entity = E::default();
+        let table_name = entity.table_name();
+        let query_builder = select_query.query();
+        self.apply_select_scope(table_name, query_builder)
+            .map_err(|e| DbErr::Custom(e.to_string()))?;
+        select_query.one(&self.db).await
+    }
+
+    /// Insert a new row into the database within the current tenant context.
+    ///
+    /// **Important:** the caller is responsible for setting the tenant column
+    /// on the active model before calling this method. For example:
+    ///
+    /// ```rust,ignore
+    /// scope.insert_one(task::ActiveModel {
+    ///     title: Set("Important task".into()),
+    ///     tenant_id: Set(scope.tenant_id().into()),  // required
+    ///     ..Default::default()
+    /// }).await?;
+    /// ```
+    pub async fn insert_one<A>(
+        &self,
+        active_model: A,
+    ) -> Result<<A::Entity as EntityTrait>::Model, DbErr>
+    where
+        A: ActiveModelTrait + ActiveModelBehavior + Send,
+        <A::Entity as EntityTrait>::Model: IntoActiveModel<A>,
+    {
+        active_model.insert(&self.db).await
+    }
+
+    /// Verify that a fetched row's tenant value matches this scope's tenant.
+    ///
+    /// Returns [`TenantColumnError::TenantMismatch`] when the values differ, or
+    /// [`TenantColumnError::MissingTenant`] when `found_tenant` is `None`.
+    ///
+    /// Use this as a safety check after fetching a row by primary key when you
+    /// cannot rely on the query having been scoped automatically.
     pub fn ensure_tenant_match(&self, found_tenant: Option<&str>) -> Result<(), TenantColumnError> {
         match found_tenant {
             Some(found) if found == self.tenant.as_str() => Ok(()),

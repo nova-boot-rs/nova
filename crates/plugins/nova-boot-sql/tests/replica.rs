@@ -43,7 +43,7 @@ async fn round_robin_replica_selection() {
 
     // first read should hit replica1 (101), then replica2 (201), then replica1 again
     let v1 = pool
-        .read()
+        .read_sync()
         .await
         .query_one(Statement::from_string(
             DbBackend::Sqlite,

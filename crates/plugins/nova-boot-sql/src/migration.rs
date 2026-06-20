@@ -44,7 +44,17 @@ impl NovaSql {
         let builder = self.db.get_database_backend();
         let schema = Schema::new(builder);
 
-        let existing_columns = self.get_table_columns(&table_name).await;
+        let existing_columns = match self.get_table_columns(&table_name).await {
+            Ok(columns) => columns,
+            Err(e) => {
+                // If we can't read the database state, it is unsafe to proceed.
+                println!(
+                    "⚠️ Skipping schema sync for '{}'. Could not fetch columns: {}",
+                    &table_name, e
+                );
+                return;
+            }
+        };
 
         if existing_columns.is_empty() {
             // No table exists yet — create it from the entity model.
@@ -130,17 +140,15 @@ impl NovaSql {
     }
 
     /// Helper to fetch column names based on the database type
-    pub async fn get_table_columns(&self, table_name: &str) -> Vec<String> {
+    pub async fn get_table_columns(&self, table_name: &str) -> Result<Vec<String>, DbErr> {
         let mut columns = Vec::new();
-
         match self.db.get_database_backend() {
             DbBackend::Sqlite => {
                 let sql = format!("PRAGMA table_info('{}')", table_name);
                 let res = self
                     .db
                     .query_all(Statement::from_string(DbBackend::Sqlite, sql))
-                    .await
-                    .unwrap();
+                    .await?;
                 for row in res {
                     let name: String = row.try_get("", "name").unwrap_or_default();
                     columns.push(name);
@@ -156,16 +164,19 @@ impl NovaSql {
                         sql,
                         vec![table_name.into()],
                     ))
-                    .await
-                    .unwrap();
+                    .await?;
                 for row in res {
                     let name: String = row.try_get("", "column_name").unwrap_or_default();
                     columns.push(name);
                 }
             }
-            _ => println!("⚠️ Database backend not supported for auto-sync yet."),
+            _ => {
+                return Err(DbErr::Custom(
+                    "Database backend not supported for auto-sync.".to_string(),
+                ));
+            }
         }
-        columns
+        Ok(columns)
     }
 
     /// Run migrations using the provided `MigratorTrait` implementation.
