@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["build_circuit_breaker_backend","build_rate_limiter_backend"],"struct":["Bulkhead","CircuitBreaker","DistributedCircuitBreaker","DistributedRateLimiter","RateLimiter","RetryPolicy"],"trait":["CircuitBreakerBackend","RateLimiterBackend"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["ApiVersion"],"struct":["ApiResponse","EmptyResponse","ListResponse","PaginatedResponse","PaginationQuery","VersionedResponse"]};

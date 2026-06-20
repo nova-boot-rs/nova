@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"attr":["async_trait","delete","get","patch","post","put","rest_controller"],"derive":["Deserialize","NovaRequest","NovaResponse","Serialize"],"enum":["LuaValue"],"mod":["config","discovery","error","runtime","state","traits"],"struct":["Json","RedisStore"],"trait":["Deserialize","ResilienceStore","Serialize"]};

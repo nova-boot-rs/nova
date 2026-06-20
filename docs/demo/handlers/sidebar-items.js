@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["task_handler","user_handler"]};

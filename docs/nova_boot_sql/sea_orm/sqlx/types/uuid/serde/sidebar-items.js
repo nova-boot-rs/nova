@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["braced","compact","hyphenated","simple","urn"]};

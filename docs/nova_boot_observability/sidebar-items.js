@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["REQUEST_ID_HEADER"],"fn":["attach_request_context","init_tracing","next_request_id","request_context_from_request","request_id_header_name","request_id_layer"],"mod":["openapi"],"struct":["NoopMetricsRecorder","ObservabilityConfig","ObservabilityPlugin","RequestContext","RequestId"],"trait":["NovaMetricsRecorder"]};

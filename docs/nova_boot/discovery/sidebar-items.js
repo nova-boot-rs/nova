@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["InstanceStatus"],"struct":["ServiceInstance","WatchStream"],"trait":["Discovery"]};
