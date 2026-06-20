@@ -182,7 +182,7 @@ impl CommandStore for SqlCqrsBridge {
 
     async fn get_events(&self, aggregate_id: &str) -> Result<Vec<StoredEvent>, CqrsError> {
         self.ensure_init().await?;
-        let db = self.pool.read().await;
+        let db = self.pool.read_sync();
         let backend = db.get_database_backend();
 
         let sql = match backend {
@@ -244,7 +244,7 @@ impl CommandStore for SqlCqrsBridge {
 impl QueryStore for SqlCqrsBridge {
     async fn get_projection_raw(&self, key: &str) -> Result<Option<JsonValue>, CqrsError> {
         self.ensure_init().await?;
-        let db = self.pool.read().await;
+        let db = self.pool.read_sync();
         let backend = db.get_database_backend();
 
         let sql = match backend {

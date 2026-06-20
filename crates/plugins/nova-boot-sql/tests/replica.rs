@@ -44,7 +44,6 @@ async fn round_robin_replica_selection() {
     // first read should hit replica1 (101), then replica2 (201), then replica1 again
     let v1 = pool
         .read_sync()
-        .await
         .query_one(Statement::from_string(
             DbBackend::Sqlite,
             "PRAGMA user_version".to_string(),
@@ -56,8 +55,7 @@ async fn round_robin_replica_selection() {
     assert_eq!(val1, 101);
 
     let v2 = pool
-        .read()
-        .await
+        .read_sync()
         .query_one(Statement::from_string(
             DbBackend::Sqlite,
             "PRAGMA user_version".to_string(),
@@ -69,8 +67,7 @@ async fn round_robin_replica_selection() {
     assert_eq!(val2, 201);
 
     let v3 = pool
-        .read()
-        .await
+        .read_sync()
         .query_one(Statement::from_string(
             DbBackend::Sqlite,
             "PRAGMA user_version".to_string(),
@@ -98,8 +95,7 @@ async fn dynamic_replica_addition() {
     // initially reads should go to primary
     let pool = sql.read_write_pool();
     let v = pool
-        .read()
-        .await
+        .read_sync()
         .query_one(Statement::from_string(
             DbBackend::Sqlite,
             "PRAGMA user_version".to_string(),
@@ -122,8 +118,7 @@ async fn dynamic_replica_addition() {
 
     // now reads should hit replica (55)
     let v2 = pool
-        .read()
-        .await
+        .read_sync()
         .query_one(Statement::from_string(
             DbBackend::Sqlite,
             "PRAGMA user_version".to_string(),
